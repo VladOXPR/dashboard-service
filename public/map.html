@@ -8,6 +8,7 @@
     <script src='https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js'></script>
     <link href='https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css' rel='stylesheet' />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/luxon/3.4.4/luxon.min.js"></script>
+    <script src="modal.js"></script>
     <style>
         body {
             margin: 0;
@@ -44,6 +45,55 @@
 
         .back-button:hover {
             background-color: #333333;
+        }
+
+        .battery-info-modal {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.95);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            color: #FFFFFF;
+            padding: 15px 25px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            z-index: 1002;
+            display: none;
+            box-shadow: 
+                0 8px 32px rgba(0, 0, 0, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        }
+
+        .battery-info-modal.show {
+            display: block;
+        }
+
+        .battery-info-content {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            font-size: 14px;
+        }
+
+        .battery-info-item {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .battery-info-label {
+            color: #CCCCCC;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .battery-info-value {
+            font-size: 16px;
+            font-weight: bold;
+            color: #FFFFFF;
         }
 
         .mapboxgl-popup-content {
@@ -630,57 +680,33 @@
     }
 
     async function checkForActiveBattery() {
-        // Get battery ID from referrer or localStorage
-        const referrer = document.referrer;
-        let batteryId = null;
+        // Get sticker_id from URL path
+        const pathname = window.location.pathname;
+        let stickerId = null;
 
-        // Try to get battery ID from referrer
-        if (referrer) {
-            try {
-                const referrerUrl = new URL(referrer);
-                const pathname = referrerUrl.pathname;
-                if (pathname && pathname !== '/' && pathname !== '/map.html') {
-                    batteryId = pathname.substring(1);
-                }
-            } catch (error) {
-                console.error('Error parsing referrer URL:', error);
-            }
+        // Extract sticker_id from path (e.g., /A201 -> A201)
+        if (pathname && pathname !== '/' && pathname !== '/map.html') {
+            stickerId = pathname.substring(1).replace(/^\//, ''); // Remove leading slash
         }
 
-        // Also try to get from localStorage as fallback
-        if (!batteryId) {
-            batteryId = localStorage.getItem('currentBatteryId');
-        }
-
-        if (!batteryId || batteryId === '' || batteryId === 'map.html') {
-            console.log('No active battery found');
-            return; // No active battery
+        if (!stickerId || stickerId === '') {
+            console.log('No sticker_id in URL');
+            return; // No sticker_id in URL
         }
 
         try {
-            const host = window.location.hostname;
-            const port = window.location.port ? `:${window.location.port}` : '';
-            const protocol = window.location.protocol;
-            const apiUrl = `${protocol}//${host}${port}/api/battery/${batteryId}`;
-
-            console.log('Checking battery:', batteryId);
+            // Fetch battery data from server API endpoint
+            const apiUrl = `/api/battery/sticker/${stickerId}`;
+            console.log('Fetching battery data for sticker_id:', stickerId);
+            
             const response = await fetch(apiUrl);
             if (response.ok) {
-                const data = await response.json();
-                console.log('Battery data:', data);
+                const result = await response.json();
+                console.log('Battery data:', result);
 
-                // Only show if battery is currently borrowed (no return time)
-                if (!data.pGhtime && data.pBorrowtime) {
-                    borrowTime = convertChinaToChicagoTime(data.pBorrowtime);
-                    if (borrowTime) {
-                        console.log('Showing rental status for battery:', batteryId);
-                        document.getElementById('rentalStatus').style.display = 'block';
-                        updateRentalStatus();
-
-                        // Start updating every second
-                        if (statusUpdateInterval) clearInterval(statusUpdateInterval);
-                        statusUpdateInterval = setInterval(updateRentalStatus, 1000);
-                    }
+                // Call modal function with the API response
+                if (result.success) {
+                    showBatteryRentalModal(result);
                 }
             } else {
                 console.log('Battery not found in API:', response.status);

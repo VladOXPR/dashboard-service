@@ -50,50 +50,29 @@ const getCachedData = (key) => {
 const trackAnalytics = qrStats.trackingMiddleware;
 
 // Specific routes (must come before static middleware)
-// Admin route
-app.get('/admin', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public/admin.html'));
-});
-
-app.get('/map.html', (req, res) => {
+// Landing page route - map view as default
+app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public/map.html'));
 });
 
-// Stats page route
-app.get('/stats', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public/qrStats.html'));
-});
-
-// Key management page route
-app.get('/key', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public/key.html'));
-});
-
-// Landing page route with analytics tracking
-app.get('/', trackAnalytics, (req, res) => {
-    res.sendFile(path.join(__dirname, 'public/index-backup.html'));
+// Battery/sticker ID route - shows map with rental info modal
+app.get('/:sticker_id', (req, res, next) => {
+    const stickerId = req.params.sticker_id;
+    
+    // Skip static files and known routes
+    const skipRoutes = ['favicon.ico', 'robots.txt', 'sitemap.xml'];
+    if (stickerId.includes('.') || skipRoutes.includes(stickerId)) {
+        return next(); // Let static middleware handle these
+    }
+    
+    // Serve map.html for sticker_id routes
+    res.sendFile(path.join(__dirname, 'public/map.html'));
 });
 
 // Static files with caching (after specific routes)
 app.use(express.static(path.join(__dirname, 'public'), {
     maxAge: process.env.NODE_ENV === 'production' ? '1d' : '0'
 }));
-
-// Battery ID routes with analytics tracking (only for valid battery IDs)
-app.get('/:batteryId', (req, res, next) => {
-    const batteryId = req.params.batteryId;
-    
-    // Skip static files and other non-battery ID routes
-    const skipRoutes = ['stats', 'admin', 'map', 'key', 'favicon.ico', 'robots.txt', 'sitemap.xml'];
-    if (batteryId.includes('.') || skipRoutes.includes(batteryId)) {
-        return next(); // Let other routes or static middleware handle these
-    }
-    
-    // Apply analytics tracking for valid battery IDs
-    trackAnalytics(req, res, () => {
-        res.sendFile(path.join(__dirname, 'public/index-backup.html'));
-    });
-});
 
 // Input validation middleware
 const validateBatteryId = (req, res, next) => {
@@ -282,6 +261,46 @@ app.delete('/api/admin/stations/:id', async (req, res) => {
     } catch (error) {
         console.error('Error deleting station:', error);
         res.status(500).json({ error: error.message || 'Failed to delete station' });
+    }
+});
+
+// Battery data endpoint by sticker_id (external API)
+app.get('/api/battery/sticker/:stickerId', async (req, res) => {
+    const stickerId = req.params.stickerId;
+    const cacheKey = `battery_sticker_${stickerId}`;
+    const cachedData = getCachedData(cacheKey);
+    
+    if (cachedData) {
+        return res.json(cachedData);
+    }
+
+    try {
+        console.log(`Fetching battery data for sticker_id: ${stickerId}`);
+        const response = await fetch(`https://api.cuub.tech/battery/${stickerId}`);
+        
+        if (!response.ok) {
+            console.error(`Battery API error: ${response.status}`);
+            return res.status(response.status).json({ 
+                success: false, 
+                error: `Failed to fetch battery data: ${response.status}` 
+            });
+        }
+
+        const result = await response.json();
+        
+        if (result.success) {
+            // Cache the result
+            apiCache.set(cacheKey, {
+                data: result.data,
+                timestamp: Date.now()
+            });
+            res.json(result);
+        } else {
+            res.status(404).json({ error: result.error || "Battery not found" });
+        }
+    } catch (error) {
+        console.error("Error fetching battery data from external API:", error);
+        res.status(500).json({ error: "Internal server error" });
     }
 });
 

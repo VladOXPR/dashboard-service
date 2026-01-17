@@ -30,7 +30,7 @@ const locationManager = {
         } catch (error) {
             console.error('Error fetching all stations:', error);
             return [];
-        }
+    }
     },
     
     // Get all location IDs
@@ -107,7 +107,7 @@ const locationManager = {
                     longitude: locationData.coordinates[0]
                 })
             });
-            
+        
             if (!response.ok) {
                 const error = await response.json();
                 throw new Error(error.message || `HTTP error! Status: ${response.status}`);
@@ -138,8 +138,8 @@ const locationManager = {
             if (!response.ok) {
                 const error = await response.json();
                 throw new Error(error.message || `HTTP error! Status: ${response.status}`);
-            }
-            
+        }
+        
             const result = await response.json();
             return result.success;
         } catch (error) {
