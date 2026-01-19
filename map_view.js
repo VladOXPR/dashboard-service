@@ -9,9 +9,23 @@ mapboxgl.accessToken = MAPBOX_TOKEN;
 
 const map = new mapboxgl.Map({
     container: 'map',
-    style: 'mapbox://styles/mapbox/streets-v12',
-    center: [-87.654150, 41.923350], // Default center (DePaul coordinates)
-    zoom: 13
+    style: 'mapbox://styles/mapbox/standard',
+    config: {
+        basemap: {
+            lightPreset: "dusk",
+            showPedestrianRoads: false,
+            showPlaceLabels: false,
+            showPointOfInterestLabels: false,
+            showTransitLabels: false,
+            showAdminBoundaries: false,
+            show3dFacades: true,
+            theme: "faded"
+        }
+    },
+    center: [-87.65, 41.9295],
+    zoom: 13.5,
+    bearing: 0.00,
+    pitch: 45,
 });
 
 // Store stations data
@@ -70,32 +84,42 @@ async function fetchStations() {
 function addMarkersToMap(stations) {
     const geojson = stationsToGeoJSON(stations, selectedStationId);
     
-    // Add source with clustering enabled
+    // Add source with clustering enabled (Mapbox standard configuration)
     map.addSource('stations', {
         type: 'geojson',
         data: geojson,
         cluster: true,
         clusterMaxZoom: 14, // Max zoom to cluster points on
-        clusterRadius: 20 // Radius of each cluster when clustering points
+        clusterRadius: 50, // Radius of each cluster when clustering points (Mapbox default)
+        clusterProperties: {
+            // Keep any aggregated properties here if needed
+        }
     });
     
-    // Add cluster circles layer
+    // Add cluster circles layer (Mapbox standard pattern)
     map.addLayer({
         id: 'clusters',
         type: 'circle',
         source: 'stations',
         filter: ['has', 'point_count'],
         paint: {
-            'circle-color': '#0198FD',
+            'circle-color': [
+                'step',
+                ['get', 'point_count'],
+                '#0198FD',  // Default color for small clusters
+                10, '#0198FD',  // Color for medium clusters
+                30, '#0198FD'   // Color for large clusters
+            ],
             'circle-radius': [
                 'step',
                 ['get', 'point_count'],
                 20,  // Default size for clusters
-                10, 50,  // If point_count >= 10, size = 50
-                30, 60   // If point_count >= 30, size = 60
+                10, 30,  // If point_count >= 10, size = 50
+                30, 30   // If point_count >= 30, size = 60
             ],
             'circle-stroke-width': 3,
-            'circle-stroke-color': '#ffffff'
+            'circle-stroke-color': '#ffffff',
+            'circle-stroke-opacity': 1
         }
     });
     
@@ -146,21 +170,26 @@ function addMarkersToMap(stations) {
         }
     });
     
-    // Handle clicks on clusters
+    // Handle clicks on clusters (Mapbox standard pattern)
     map.on('click', 'clusters', (e) => {
         const features = map.queryRenderedFeatures(e.point, {
             layers: ['clusters']
         });
         const clusterId = features[0].properties.cluster_id;
+        const pointCount = features[0].properties.point_count;
         
-        map.getSource('stations').getClusterExpansionZoom(clusterId, (err, zoom) => {
-            if (err) return;
-            
-            map.easeTo({
-                center: features[0].geometry.coordinates,
-                zoom: zoom
-            });
-        });
+        // Get the expansion zoom for this cluster
+        map.getSource('stations').getClusterExpansionZoom(
+            clusterId,
+            (err, zoom) => {
+                if (err) return;
+                
+                map.easeTo({
+                    center: features[0].geometry.coordinates,
+                    zoom: zoom
+                });
+            }
+        );
     });
     
     // Handle clicks on individual markers
