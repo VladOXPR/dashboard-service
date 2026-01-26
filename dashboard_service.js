@@ -54,6 +54,17 @@
         return api('/api/rents/' + encodeURIComponent(stationId) + '/' + range);
     }
 
+    async function popStation(stationId) {
+        const res = await fetch('/api/stations/' + encodeURIComponent(stationId) + '/pop', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({})
+        });
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.error || 'Request failed');
+        return json;
+    }
+
     function parseRentData(data) {
         if (!data || !data.success) return null;
         const d = data.data;
@@ -64,8 +75,9 @@
         return { totalAmount: totalAmount ?? 0, totalRents: totalRents ?? 0 };
     }
 
-    function renderStationCard(station, rentData) {
+    function renderStationCard(station, rentData, stationIdFromUser) {
         const title = station.title || station.name || station.id || 'Station';
+        const stationId = station.id || station.station_id || stationIdFromUser || '';
         const filled = station.filled_slots != null ? station.filled_slots : (station.filledSlots ?? '—');
         const open = station.open_slots != null ? station.open_slots : (station.openSlots ?? '—');
         const rent = parseRentData(rentData);
@@ -84,7 +96,8 @@
             '<div class="slot"><span class="slot-dot open"></span><strong>' + escapeHtml(String(open)) + '</strong> <span>Open</span></div>' +
             '</div>' +
             '<div class="rent-section">' +
-            '<div class="rent-data">' + revenueHtml + '</div></div>';
+            '<div class="rent-data">' + revenueHtml + '</div></div>' +
+            '<button class="pop-button" data-station-id="' + escapeHtml(stationId) + '" data-station-title="' + escapeHtml(title) + '">Pop all</button>';
         return div;
     }
 
@@ -168,8 +181,21 @@
 
             const container = document.getElementById('stations');
             container.innerHTML = '';
-            results.forEach(function (r) {
-                container.appendChild(renderStationCard(r.stationData, r.rentData));
+            results.forEach(function (r, index) {
+                const stationIdFromUser = stations[index];
+                const card = renderStationCard(r.stationData, r.rentData, stationIdFromUser);
+                container.appendChild(card);
+                
+                const popBtn = card.querySelector('.pop-button');
+                if (popBtn) {
+                    popBtn.addEventListener('click', function () {
+                        const stationId = this.getAttribute('data-station-id');
+                        const stationTitle = this.getAttribute('data-station-title');
+                        if (stationId) {
+                            showPopModal(stationId, stationTitle);
+                        }
+                    });
+                }
             });
 
             showStations();
@@ -179,12 +205,59 @@
         }
     }
 
+    var currentPopStationId = null;
+
+    function showPopModal(stationId, stationTitle) {
+        currentPopStationId = stationId;
+        const modal = document.getElementById('popModal');
+        const message = document.getElementById('popModalMessage');
+        message.textContent = 'Are you sure you want to pop all batteries from "' + escapeHtml(stationTitle) + '"? This action cannot be undone.';
+        modal.classList.add('active');
+    }
+
+    function hidePopModal() {
+        const modal = document.getElementById('popModal');
+        modal.classList.remove('active');
+        currentPopStationId = null;
+    }
+
+    async function handlePopConfirm() {
+        if (!currentPopStationId) return;
+        
+        const confirmBtn = document.getElementById('popModalConfirm');
+        const cancelBtn = document.getElementById('popModalCancel');
+        confirmBtn.disabled = true;
+        cancelBtn.disabled = true;
+        confirmBtn.textContent = 'Popping...';
+
+        try {
+            await popStation(currentPopStationId);
+            hidePopModal();
+            loadDashboard();
+        } catch (e) {
+            console.error(e);
+            alert('Failed to pop batteries. Please try again.');
+            confirmBtn.disabled = false;
+            cancelBtn.disabled = false;
+            confirmBtn.textContent = 'Pop All';
+        }
+    }
+
     function init() {
         setDefaultDates();
         document.getElementById('applyDates').addEventListener('click', loadDashboard);
         document.getElementById('logout').addEventListener('click', function (e) {
             e.preventDefault();
             redirectToLogin();
+        });
+
+        const popModal = document.getElementById('popModal');
+        document.getElementById('popModalCancel').addEventListener('click', hidePopModal);
+        document.getElementById('popModalConfirm').addEventListener('click', handlePopConfirm);
+        popModal.addEventListener('click', function (e) {
+            if (e.target === popModal) {
+                hidePopModal();
+            }
         });
 
         loadDashboard();

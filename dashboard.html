@@ -165,6 +165,90 @@
             font-weight: 600;
         }
         .rent-empty { color: #525252; font-style: italic; }
+        .pop-button {
+            width: 100%;
+            margin-top: 1rem;
+            padding: 0.75rem 1rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            background: #dc2626;
+            color: white;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .pop-button:hover { background: #b91c1c; }
+        .pop-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+        .modal-overlay.active {
+            display: flex;
+        }
+        .modal {
+            background: #1a1a1a;
+            border: 1px solid #262626;
+            border-radius: 12px;
+            padding: 1.5rem;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+        }
+        .modal-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+        }
+        .modal-message {
+            color: #a3a3a3;
+            margin-bottom: 1.5rem;
+            line-height: 1.5;
+        }
+        .modal-actions {
+            display: flex;
+            gap: 0.75rem;
+            justify-content: flex-end;
+        }
+        .modal-button {
+            padding: 0.625rem 1.25rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        .modal-button.cancel {
+            background: #262626;
+            color: #e5e5e5;
+        }
+        .modal-button.cancel:hover {
+            background: #333;
+        }
+        .modal-button.confirm {
+            background: #dc2626;
+            color: white;
+        }
+        .modal-button.confirm:hover {
+            background: #b91c1c;
+        }
+        .modal-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
     </style>
 </head>
 <body>
@@ -197,6 +281,18 @@
         <div class="error" id="error" style="display: none;"></div>
         <div class="stations" id="stations" style="display: none;"></div>
     </main>
+    <div class="modal-overlay" id="popModal">
+        <div class="modal">
+            <div class="modal-title">Confirm Pop All Batteries</div>
+            <div class="modal-message" id="popModalMessage">
+                Are you sure you want to pop all batteries from this station? This action cannot be undone.
+            </div>
+            <div class="modal-actions">
+                <button class="modal-button cancel" id="popModalCancel">Cancel</button>
+                <button class="modal-button confirm" id="popModalConfirm">Pop All</button>
+            </div>
+        </div>
+    </div>
     <script src="dashboard_service.js"></script>
 </body>
 </html>
