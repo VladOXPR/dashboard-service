@@ -76,6 +76,19 @@
             text-decoration: none;
         }
         .logout:hover { background: #262626; color: #e5e5e5; }
+        .nav-tabs {
+            display: flex;
+            gap: 0.25rem;
+        }
+        .nav-tabs a {
+            padding: 0.5rem 1rem;
+            font-size: 0.9rem;
+            color: #a3a3a3;
+            text-decoration: none;
+            border-radius: 6px;
+        }
+        .nav-tabs a:hover { color: #e5e5e5; }
+        .nav-tabs a.active { color: #0099FF; font-weight: 600; }
         .summary-bar {
             background: #1a1a1a;
             border-bottom: 1px solid #262626;
@@ -165,89 +178,232 @@
             font-weight: 600;
         }
         .rent-empty { color: #525252; font-style: italic; }
-        .pop-button {
-            width: 100%;
-            margin-top: 1rem;
-            padding: 0.75rem 1rem;
+        .view-performance { display: block; }
+        .view-performance.hidden { display: none; }
+        .view-station-mgmt { display: none; }
+        .view-station-mgmt.visible { display: block; }
+        .add-station-btn {
+            padding: 0.75rem 1.25rem;
             font-size: 0.9rem;
             font-weight: 600;
             border: none;
             border-radius: 8px;
-            background: #dc2626;
+            background: #0099FF;
             color: white;
             cursor: pointer;
-            transition: background 0.2s;
+            margin-bottom: 1rem;
         }
-        .pop-button:hover { background: #b91c1c; }
-        .pop-button:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
+        .add-station-btn:hover { background: #008ae6; }
+        .station-mgmt-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #1a1a1a;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid #262626;
         }
+        .station-mgmt-table th,
+        .station-mgmt-table td {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            border-bottom: 1px solid #262626;
+        }
+        .station-mgmt-table th {
+            background: #262626;
+            color: #a3a3a3;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        .station-mgmt-table tr:last-child td { border-bottom: none; }
+        .station-mgmt-table .btn-edit,
+        .station-mgmt-table .btn-delete {
+            padding: 0.4rem 0.75rem;
+            font-size: 0.85rem;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-right: 0.5rem;
+        }
+        .station-mgmt-table .btn-edit {
+            background: #262626;
+            color: #e5e5e5;
+        }
+        .station-mgmt-table .btn-edit:hover { background: #333; }
+        .station-mgmt-table .btn-delete {
+            background: #dc2626;
+            color: white;
+        }
+        .station-mgmt-table .btn-delete:hover { background: #b91c1c; }
         .modal-overlay {
             position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.7);
+            inset: 0;
+            background: rgba(0,0,0,0.7);
             display: none;
             align-items: center;
             justify-content: center;
             z-index: 2000;
         }
-        .modal-overlay.active {
-            display: flex;
-        }
-        .modal {
+        .modal-overlay.active { display: flex; }
+        .modal-box {
             background: #1a1a1a;
             border: 1px solid #262626;
             border-radius: 12px;
             padding: 1.5rem;
-            max-width: 400px;
+            max-width: 420px;
             width: 90%;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
         }
-        .modal-title {
-            font-size: 1.1rem;
-            font-weight: 600;
-            margin-bottom: 0.75rem;
+        .modal-box h3 { margin-bottom: 1rem; font-size: 1.1rem; }
+        .modal-box label { display: block; font-size: 0.85rem; color: #a3a3a3; margin-bottom: 0.25rem; }
+        .modal-box input {
+            width: 100%;
+            padding: 0.5rem 0.75rem;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+            border: 1px solid #333;
+            border-radius: 6px;
+            background: #262626;
+            color: #e5e5e5;
         }
-        .modal-message {
-            color: #a3a3a3;
-            margin-bottom: 1.5rem;
-            line-height: 1.5;
-        }
-        .modal-actions {
-            display: flex;
-            gap: 0.75rem;
-            justify-content: flex-end;
-        }
-        .modal-button {
-            padding: 0.625rem 1.25rem;
+        .modal-box input:focus { outline: none; border-color: #0099FF; }
+        .modal-actions { display: flex; gap: 0.75rem; justify-content: flex-end; margin-top: 1rem; }
+        .modal-actions button {
+            padding: 0.5rem 1rem;
             font-size: 0.9rem;
             font-weight: 600;
             border: none;
             border-radius: 6px;
             cursor: pointer;
-            transition: opacity 0.2s;
         }
-        .modal-button.cancel {
-            background: #262626;
-            color: #e5e5e5;
-        }
-        .modal-button.cancel:hover {
-            background: #333;
-        }
-        .modal-button.confirm {
-            background: #dc2626;
-            color: white;
-        }
-        .modal-button.confirm:hover {
-            background: #b91c1c;
-        }
-        .modal-button:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
+        .modal-actions .btn-cancel { background: #262626; color: #e5e5e5; }
+        .modal-actions .btn-cancel:hover { background: #333; }
+        .modal-actions .btn-submit { background: #0099FF; color: white; }
+        .modal-actions .btn-submit:hover { background: #008ae6; }
+
+        @media (max-width: 500px) {
+            header {
+                flex-direction: column;
+                align-items: stretch;
+                padding: 0.75rem 1rem;
+                gap: 0.75rem;
+            }
+            .header-left {
+                flex-wrap: wrap;
+                gap: 0.5rem;
+                align-items: center;
+            }
+            h1 { font-size: 1.1rem; }
+            .nav-tabs {
+                width: 100%;
+                order: 3;
+                margin-top: 0.25rem;
+            }
+            .nav-tabs a {
+                flex: 1;
+                text-align: center;
+                padding: 0.75rem 0.5rem;
+                min-height: 44px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            .date-range {
+                width: 100%;
+                flex-wrap: wrap;
+                gap: 0.5rem;
+            }
+            .date-range label { flex: 0 0 auto; }
+            .date-range input {
+                flex: 1;
+                min-width: 0;
+                min-height: 44px;
+            }
+            .date-range button {
+                width: 100%;
+                min-height: 44px;
+            }
+            .logout {
+                display: block;
+                text-align: center;
+                padding: 0.75rem 1rem;
+                min-height: 44px;
+            }
+            .summary-bar {
+                padding: 0.75rem 1rem;
+                flex-direction: column;
+                align-items: stretch;
+                gap: 0.75rem;
+            }
+            .summary-item {
+                justify-content: space-between;
+            }
+            main {
+                padding: 1rem;
+                max-width: 100%;
+            }
+            .stations {
+                grid-template-columns: 1fr;
+                gap: 0.75rem;
+            }
+            .station-card {
+                padding: 1rem;
+            }
+            .station-title { font-size: 1rem; }
+            .add-station-btn {
+                width: 100%;
+                min-height: 48px;
+                padding: 1rem;
+                margin-bottom: 0.75rem;
+            }
+            #stationMgmtList {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                margin: 0 -1rem;
+                padding: 0 1rem;
+            }
+            .station-mgmt-table {
+                min-width: 520px;
+                font-size: 0.85rem;
+            }
+            .station-mgmt-table th,
+            .station-mgmt-table td {
+                padding: 0.6rem 0.5rem;
+            }
+            .station-mgmt-table .btn-edit,
+            .station-mgmt-table .btn-delete {
+                min-height: 44px;
+                padding: 0.6rem 0.75rem;
+                margin-bottom: 0.25rem;
+                margin-right: 0.25rem;
+            }
+            .modal-overlay {
+                padding: 1rem;
+                align-items: flex-end;
+            }
+            .modal-box {
+                width: 100%;
+                max-width: 100%;
+                max-height: 90vh;
+                overflow-y: auto;
+                border-radius: 12px 12px 0 0;
+                padding: 1.25rem;
+            }
+            .modal-box h3 { font-size: 1rem; margin-bottom: 0.75rem; }
+            .modal-box input {
+                min-height: 48px;
+                font-size: 16px;
+            }
+            .modal-actions {
+                margin-top: 1.25rem;
+                gap: 0.5rem;
+            }
+            .modal-actions button {
+                flex: 1;
+                min-height: 48px;
+                padding: 0.75rem 1rem;
+            }
+            .loading, .error {
+                padding: 1.5rem 1rem;
+            }
         }
     </style>
 </head>
@@ -256,8 +412,12 @@
         <div class="header-left">
             <h1>CUUB Dashboard</h1>
             <span class="user-badge" id="userBadge"></span>
+            <nav class="nav-tabs" id="navTabs" style="display: none;">
+                <a href="#" id="navPerformance" class="active">Performance</a>
+                <a href="#" id="navStationMgmt">Station Management</a>
+            </nav>
         </div>
-        <div class="date-range">
+        <div class="date-range" id="headerDateRange">
             <label for="startDate">From</label>
             <input type="date" id="startDate">
             <label for="endDate">To</label>
@@ -276,20 +436,43 @@
             <span class="summary-value" id="summaryTakeHome">$0</span>
         </div>
     </div>
-    <main>
+    <main class="view-performance" id="viewPerformance">
         <div class="loading" id="loading">Loading…</div>
         <div class="error" id="error" style="display: none;"></div>
         <div class="stations" id="stations" style="display: none;"></div>
     </main>
-    <div class="modal-overlay" id="popModal">
-        <div class="modal">
-            <div class="modal-title">Confirm Pop All Batteries</div>
-            <div class="modal-message" id="popModalMessage">
-                Are you sure you want to pop all batteries from this station? This action cannot be undone.
-            </div>
+    <main class="view-station-mgmt" id="viewStationMgmt">
+        <button type="button" class="add-station-btn" id="addStationBtn">Add station</button>
+        <div class="loading" id="mgmtLoading" style="display: none;">Loading…</div>
+        <div class="error" id="mgmtError" style="display: none;"></div>
+        <div id="stationMgmtList"></div>
+    </main>
+    <div class="modal-overlay" id="stationFormModal">
+        <div class="modal-box">
+            <h3 id="stationFormTitle">Add station</h3>
+            <form id="stationForm">
+                <label for="stationId">ID</label>
+                <input type="text" id="stationId" name="id" required placeholder="e.g. CUBT062510000003">
+                <label for="stationTitle">Title</label>
+                <input type="text" id="stationTitle" name="title" required placeholder="Station name">
+                <label for="stationLat">Latitude</label>
+                <input type="number" id="stationLat" name="latitude" step="any" required placeholder="41.94960">
+                <label for="stationLng">Longitude</label>
+                <input type="number" id="stationLng" name="longitude" step="any" required placeholder="-87.65861">
+                <div class="modal-actions">
+                    <button type="button" class="btn-cancel" id="stationFormCancel">Cancel</button>
+                    <button type="submit" class="btn-submit" id="stationFormSubmit">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div class="modal-overlay" id="deleteConfirmModal">
+        <div class="modal-box">
+            <h3>Delete station</h3>
+            <p style="color: #a3a3a3; margin-bottom: 1rem;" id="deleteConfirmMessage">Are you sure you want to delete this station?</p>
             <div class="modal-actions">
-                <button class="modal-button cancel" id="popModalCancel">Cancel</button>
-                <button class="modal-button confirm" id="popModalConfirm">Pop All</button>
+                <button type="button" class="btn-cancel" id="deleteConfirmCancel">Cancel</button>
+                <button type="button" class="btn-submit" id="deleteConfirmBtn" style="background: #dc2626;">Delete</button>
             </div>
         </div>
     </div>

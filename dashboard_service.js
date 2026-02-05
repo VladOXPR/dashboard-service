@@ -54,17 +54,6 @@
         return api('/api/rents/' + encodeURIComponent(stationId) + '/' + range);
     }
 
-    async function popStation(stationId) {
-        const res = await fetch('/api/stations/' + encodeURIComponent(stationId) + '/pop', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({})
-        });
-        const json = await res.json();
-        if (!res.ok) throw new Error(json.error || 'Request failed');
-        return json;
-    }
-
     function parseRentData(data) {
         if (!data || !data.success) return null;
         const d = data.data;
@@ -75,9 +64,8 @@
         return { totalAmount: totalAmount ?? 0, totalRents: totalRents ?? 0 };
     }
 
-    function renderStationCard(station, rentData, stationIdFromUser) {
+    function renderStationCard(station, rentData) {
         const title = station.title || station.name || station.id || 'Station';
-        const stationId = station.id || station.station_id || stationIdFromUser || '';
         const filled = station.filled_slots != null ? station.filled_slots : (station.filledSlots ?? '—');
         const open = station.open_slots != null ? station.open_slots : (station.openSlots ?? '—');
         const rent = parseRentData(rentData);
@@ -96,8 +84,7 @@
             '<div class="slot"><span class="slot-dot open"></span><strong>' + escapeHtml(String(open)) + '</strong> <span>Open</span></div>' +
             '</div>' +
             '<div class="rent-section">' +
-            '<div class="rent-data">' + revenueHtml + '</div></div>' +
-            '<button class="pop-button" data-station-id="' + escapeHtml(stationId) + '" data-station-title="' + escapeHtml(title) + '">Pop all</button>';
+            '<div class="rent-data">' + revenueHtml + '</div></div>';
         return div;
     }
 
@@ -181,21 +168,8 @@
 
             const container = document.getElementById('stations');
             container.innerHTML = '';
-            results.forEach(function (r, index) {
-                const stationIdFromUser = stations[index];
-                const card = renderStationCard(r.stationData, r.rentData, stationIdFromUser);
-                container.appendChild(card);
-                
-                const popBtn = card.querySelector('.pop-button');
-                if (popBtn) {
-                    popBtn.addEventListener('click', function () {
-                        const stationId = this.getAttribute('data-station-id');
-                        const stationTitle = this.getAttribute('data-station-title');
-                        if (stationId) {
-                            showPopModal(stationId, stationTitle);
-                        }
-                    });
-                }
+            results.forEach(function (r) {
+                container.appendChild(renderStationCard(r.stationData, r.rentData));
             });
 
             showStations();
@@ -205,41 +179,168 @@
         }
     }
 
-    var currentPopStationId = null;
-
-    function showPopModal(stationId, stationTitle) {
-        currentPopStationId = stationId;
-        const modal = document.getElementById('popModal');
-        const message = document.getElementById('popModalMessage');
-        message.textContent = 'Are you sure you want to pop all batteries from "' + escapeHtml(stationTitle) + '"? This action cannot be undone.';
-        modal.classList.add('active');
+    function isAdmin() {
+        var user = getUser();
+        return user && (user.type || '').toUpperCase() === 'ADMIN';
     }
 
-    function hidePopModal() {
-        const modal = document.getElementById('popModal');
-        modal.classList.remove('active');
-        currentPopStationId = null;
+    function showView(name) {
+        var perf = document.getElementById('viewPerformance');
+        var mgmt = document.getElementById('viewStationMgmt');
+        var dateRange = document.getElementById('headerDateRange');
+        var summaryBar = document.getElementById('summaryBar');
+        var navPerf = document.getElementById('navPerformance');
+        var navMgmt = document.getElementById('navStationMgmt');
+        if (name === 'performance') {
+            if (perf) perf.classList.remove('hidden');
+            if (mgmt) mgmt.classList.remove('visible');
+            if (dateRange) dateRange.style.display = 'flex';
+            if (summaryBar) summaryBar.style.display = 'flex';
+            if (navPerf) navPerf.classList.add('active');
+            if (navMgmt) navMgmt.classList.remove('active');
+        } else {
+            if (perf) perf.classList.add('hidden');
+            if (mgmt) mgmt.classList.add('visible');
+            if (dateRange) dateRange.style.display = 'none';
+            if (summaryBar) summaryBar.style.display = 'none';
+            if (navPerf) navPerf.classList.remove('active');
+            if (navMgmt) navMgmt.classList.add('active');
+            loadStationManagement();
+        }
     }
 
-    async function handlePopConfirm() {
-        if (!currentPopStationId) return;
-        
-        const confirmBtn = document.getElementById('popModalConfirm');
-        const cancelBtn = document.getElementById('popModalCancel');
-        confirmBtn.disabled = true;
-        cancelBtn.disabled = true;
-        confirmBtn.textContent = 'Popping...';
+    async function fetchAllStations() {
+        return api('/api/stations');
+    }
 
+    async function createStation(payload) {
+        var res = await fetch('/api/stations', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        var json = await res.json();
+        if (!res.ok) throw new Error(json.error || json.message || 'Request failed');
+        return json;
+    }
+
+    async function updateStation(id, payload) {
+        var res = await fetch('/api/stations/' + encodeURIComponent(id), {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        var json = await res.json();
+        if (!res.ok) throw new Error(json.error || json.message || 'Request failed');
+        return json;
+    }
+
+    async function deleteStation(id) {
+        var res = await fetch('/api/stations/' + encodeURIComponent(id), { method: 'DELETE' });
+        var json = await res.json();
+        if (!res.ok) throw new Error(json.error || json.message || 'Request failed');
+        return json;
+    }
+
+    function renderStationManagementList(stations) {
+        var container = document.getElementById('stationMgmtList');
+        var loading = document.getElementById('mgmtLoading');
+        var errEl = document.getElementById('mgmtError');
+        if (!container) return;
+        loading.style.display = 'none';
+        errEl.style.display = 'none';
+        if (!Array.isArray(stations) || stations.length === 0) {
+            container.innerHTML = '<p style="color: #a3a3a3;">No stations found.</p>';
+            return;
+        }
+        var html = '<table class="station-mgmt-table"><thead><tr>' +
+            '<th>ID</th><th>Title</th><th>Latitude</th><th>Longitude</th><th>Updated</th><th>Filled</th><th>Open</th><th></th></tr></thead><tbody>';
+        stations.forEach(function (s) {
+            var id = escapeHtml(String(s.id || ''));
+            var title = escapeHtml(String(s.title || ''));
+            var lat = escapeHtml(String(s.latitude != null ? s.latitude : ''));
+            var lng = escapeHtml(String(s.longitude != null ? s.longitude : ''));
+            var updated = escapeHtml(String(s.updated_at || ''));
+            var filled = s.filled_slots != null ? s.filled_slots : '—';
+            var open = s.open_slots != null ? s.open_slots : '—';
+            html += '<tr data-station-id="' + id + '">' +
+                '<td>' + id + '</td><td>' + title + '</td><td>' + lat + '</td><td>' + lng + '</td><td>' + updated + '</td><td>' + filled + '</td><td>' + open + '</td>' +
+                '<td><button type="button" class="btn-edit" data-action="edit">Edit</button><button type="button" class="btn-delete" data-action="delete">Delete</button></td></tr>';
+        });
+        html += '</tbody></table>';
+        container.innerHTML = html;
+        container.querySelectorAll('.btn-edit').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var row = btn.closest('tr');
+                var sid = row && row.getAttribute('data-station-id');
+                if (sid) openEditStationModal(sid, row);
+            });
+        });
+        container.querySelectorAll('.btn-delete').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var row = btn.closest('tr');
+                var sid = row && row.getAttribute('data-station-id');
+                if (sid) openDeleteConfirmModal(sid, row);
+            });
+        });
+    }
+
+    function openAddStationModal() {
+        document.getElementById('stationFormTitle').textContent = 'Add station';
+        document.getElementById('stationForm').reset();
+        document.getElementById('stationId').disabled = false;
+        document.getElementById('stationFormModal').classList.add('active');
+    }
+
+    function openEditStationModal(stationId, row) {
+        var cells = row.querySelectorAll('td');
+        document.getElementById('stationFormTitle').textContent = 'Edit station';
+        document.getElementById('stationId').value = stationId;
+        document.getElementById('stationId').disabled = true;
+        document.getElementById('stationTitle').value = (cells[1] && cells[1].textContent) || '';
+        document.getElementById('stationLat').value = (cells[2] && cells[2].textContent) || '';
+        document.getElementById('stationLng').value = (cells[3] && cells[3].textContent) || '';
+        document.getElementById('stationFormModal').setAttribute('data-edit-id', stationId);
+        document.getElementById('stationFormModal').classList.add('active');
+    }
+
+    function closeStationFormModal() {
+        document.getElementById('stationFormModal').classList.remove('active');
+        document.getElementById('stationFormModal').removeAttribute('data-edit-id');
+        document.getElementById('stationId').disabled = false;
+    }
+
+    function openDeleteConfirmModal(stationId, row) {
+        var title = row.querySelectorAll('td')[1];
+        var msg = document.getElementById('deleteConfirmMessage');
+        msg.textContent = 'Are you sure you want to delete "' + (title ? title.textContent : stationId) + '"?';
+        document.getElementById('deleteConfirmModal').setAttribute('data-delete-id', stationId);
+        document.getElementById('deleteConfirmModal').classList.add('active');
+    }
+
+    function closeDeleteConfirmModal() {
+        document.getElementById('deleteConfirmModal').classList.remove('active');
+        document.getElementById('deleteConfirmModal').removeAttribute('data-delete-id');
+    }
+
+    async function loadStationManagement() {
+        var container = document.getElementById('stationMgmtList');
+        var loading = document.getElementById('mgmtLoading');
+        var errEl = document.getElementById('mgmtError');
+        if (!container) return;
+        container.innerHTML = '';
+        loading.style.display = 'block';
+        errEl.style.display = 'none';
         try {
-            await popStation(currentPopStationId);
-            hidePopModal();
-            loadDashboard();
+            var json = await fetchAllStations();
+            var list = (json.data != null && Array.isArray(json.data)) ? json.data : (json.Data && Array.isArray(json.Data) ? json.Data : []);
+            renderStationManagementList(list);
         } catch (e) {
             console.error(e);
-            alert('Failed to pop batteries. Please try again.');
-            confirmBtn.disabled = false;
-            cancelBtn.disabled = false;
-            confirmBtn.textContent = 'Pop All';
+            loading.style.display = 'none';
+            errEl.style.display = 'block';
+            errEl.textContent = 'Failed to load stations. Please try again.';
+            errEl.style.color = '#fca5a5';
         }
     }
 
@@ -251,13 +352,68 @@
             redirectToLogin();
         });
 
-        const popModal = document.getElementById('popModal');
-        document.getElementById('popModalCancel').addEventListener('click', hidePopModal);
-        document.getElementById('popModalConfirm').addEventListener('click', handlePopConfirm);
-        popModal.addEventListener('click', function (e) {
-            if (e.target === popModal) {
-                hidePopModal();
+        if (isAdmin()) {
+            var nav = document.getElementById('navTabs');
+            if (nav) nav.style.display = 'flex';
+            document.getElementById('navPerformance').addEventListener('click', function (e) {
+                e.preventDefault();
+                showView('performance');
+            });
+            document.getElementById('navStationMgmt').addEventListener('click', function (e) {
+                e.preventDefault();
+                showView('station-management');
+            });
+        }
+
+        document.getElementById('addStationBtn').addEventListener('click', openAddStationModal);
+        document.getElementById('stationFormCancel').addEventListener('click', closeStationFormModal);
+        document.getElementById('stationForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            var editId = document.getElementById('stationFormModal').getAttribute('data-edit-id');
+            var id = document.getElementById('stationId').value.trim();
+            var title = document.getElementById('stationTitle').value.trim();
+            var lat = parseFloat(document.getElementById('stationLat').value, 10);
+            var lng = parseFloat(document.getElementById('stationLng').value, 10);
+            var submitBtn = document.getElementById('stationFormSubmit');
+            submitBtn.disabled = true;
+            try {
+                if (editId) {
+                    await updateStation(editId, { title: title, latitude: lat, longitude: lng });
+                    closeStationFormModal();
+                    loadStationManagement();
+                } else {
+                    await createStation({ id: id, title: title, latitude: lat, longitude: lng });
+                    closeStationFormModal();
+                    loadStationManagement();
+                }
+            } catch (err) {
+                alert(err.message || 'Request failed.');
+            } finally {
+                submitBtn.disabled = false;
             }
+        });
+        document.getElementById('deleteConfirmCancel').addEventListener('click', closeDeleteConfirmModal);
+        document.getElementById('deleteConfirmBtn').addEventListener('click', async function () {
+            var id = document.getElementById('deleteConfirmModal').getAttribute('data-delete-id');
+            if (!id) return;
+            var btn = document.getElementById('deleteConfirmBtn');
+            btn.disabled = true;
+            try {
+                await deleteStation(id);
+                closeDeleteConfirmModal();
+                loadStationManagement();
+            } catch (err) {
+                alert(err.message || 'Delete failed.');
+            } finally {
+                btn.disabled = false;
+            }
+        });
+
+        document.getElementById('stationFormModal').addEventListener('click', function (e) {
+            if (e.target === this) closeStationFormModal();
+        });
+        document.getElementById('deleteConfirmModal').addEventListener('click', function (e) {
+            if (e.target === this) closeDeleteConfirmModal();
         });
 
         loadDashboard();
