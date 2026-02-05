@@ -186,31 +186,60 @@
 
     function showView(name) {
         var perf = document.getElementById('viewPerformance');
-        var mgmt = document.getElementById('viewStationMgmt');
+        var stationMgmt = document.getElementById('viewStationMgmt');
+        var hostMgmt = document.getElementById('viewHostMgmt');
         var dateRange = document.getElementById('headerDateRange');
         var summaryBar = document.getElementById('summaryBar');
         var navPerf = document.getElementById('navPerformance');
-        var navMgmt = document.getElementById('navStationMgmt');
-        if (name === 'performance') {
-            if (perf) perf.classList.remove('hidden');
-            if (mgmt) mgmt.classList.remove('visible');
-            if (dateRange) dateRange.style.display = 'flex';
-            if (summaryBar) summaryBar.style.display = 'flex';
-            if (navPerf) navPerf.classList.add('active');
-            if (navMgmt) navMgmt.classList.remove('active');
-        } else {
-            if (perf) perf.classList.add('hidden');
-            if (mgmt) mgmt.classList.add('visible');
-            if (dateRange) dateRange.style.display = 'none';
-            if (summaryBar) summaryBar.style.display = 'none';
-            if (navPerf) navPerf.classList.remove('active');
-            if (navMgmt) navMgmt.classList.add('active');
-            loadStationManagement();
-        }
+        var navStationMgmt = document.getElementById('navStationMgmt');
+        var navHostMgmt = document.getElementById('navHostMgmt');
+        if (perf) perf.classList.toggle('hidden', name !== 'performance');
+        if (stationMgmt) stationMgmt.classList.toggle('visible', name === 'station-management');
+        if (hostMgmt) hostMgmt.classList.toggle('visible', name === 'host-management');
+        if (dateRange) dateRange.style.display = name === 'performance' ? 'flex' : 'none';
+        if (summaryBar) summaryBar.style.display = name === 'performance' ? 'flex' : 'none';
+        if (navPerf) navPerf.classList.toggle('active', name === 'performance');
+        if (navStationMgmt) navStationMgmt.classList.toggle('active', name === 'station-management');
+        if (navHostMgmt) navHostMgmt.classList.toggle('active', name === 'host-management');
+        if (name === 'station-management') loadStationManagement();
+        if (name === 'host-management') loadHostManagement();
     }
 
     async function fetchAllStations() {
         return api('/api/stations');
+    }
+
+    async function fetchAllUsers() {
+        return api('/api/users');
+    }
+
+    async function createUser(payload) {
+        var res = await fetch('/api/users', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        var json = await res.json();
+        if (!res.ok) throw new Error(json.error || json.message || 'Request failed');
+        return json;
+    }
+
+    async function updateUser(id, payload) {
+        var res = await fetch('/api/users/' + encodeURIComponent(id), {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        var json = await res.json();
+        if (!res.ok) throw new Error(json.error || json.message || 'Request failed');
+        return json;
+    }
+
+    async function deleteUser(id) {
+        var res = await fetch('/api/users/' + encodeURIComponent(id), { method: 'DELETE' });
+        var json = await res.json();
+        if (!res.ok) throw new Error(json.error || json.message || 'Request failed');
+        return json;
     }
 
     async function createStation(payload) {
@@ -280,7 +309,50 @@
             btn.addEventListener('click', function () {
                 var row = btn.closest('tr');
                 var sid = row && row.getAttribute('data-station-id');
-                if (sid) openDeleteConfirmModal(sid, row);
+                if (sid) openDeleteConfirmModal('station', sid, row);
+            });
+        });
+    }
+
+    function renderHostManagementList(users) {
+        var container = document.getElementById('hostMgmtList');
+        var loading = document.getElementById('hostMgmtLoading');
+        var errEl = document.getElementById('hostMgmtError');
+        if (!container) return;
+        loading.style.display = 'none';
+        errEl.style.display = 'none';
+        var list = Array.isArray(users) ? users : [];
+        if (list.length === 0) {
+            container.innerHTML = '<p style="color: #a3a3a3;">No users found.</p>';
+            return;
+        }
+        var html = '<table class="station-mgmt-table"><thead><tr>' +
+            '<th>ID</th><th>Username</th><th>Type</th><th>Created</th><th>Updated</th><th>Stations</th><th></th></tr></thead><tbody>';
+        list.forEach(function (u) {
+            var id = escapeHtml(String(u.id || ''));
+            var username = escapeHtml(String(u.username || ''));
+            var type = escapeHtml(String(u.type || ''));
+            var created = escapeHtml(String(u.created_at || ''));
+            var updated = escapeHtml(String(u.updated_at || ''));
+            var stations = Array.isArray(u.stations) ? u.stations.join(', ') : '';
+            html += '<tr data-user-id="' + id + '" data-user-username="' + escapeHtml(username) + '">' +
+                '<td>' + id + '</td><td>' + username + '</td><td>' + type + '</td><td>' + created + '</td><td>' + updated + '</td><td>' + escapeHtml(stations) + '</td>' +
+                '<td><button type="button" class="btn-edit">Edit</button><button type="button" class="btn-delete">Delete</button></td></tr>';
+        });
+        html += '</tbody></table>';
+        container.innerHTML = html;
+        container.querySelectorAll('.btn-edit').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var row = btn.closest('tr');
+                var uid = row && row.getAttribute('data-user-id');
+                if (uid) openEditUserModal(uid, row);
+            });
+        });
+        container.querySelectorAll('.btn-delete').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var row = btn.closest('tr');
+                var uid = row && row.getAttribute('data-user-id');
+                if (uid) openDeleteConfirmModal('user', uid, row);
             });
         });
     }
@@ -310,17 +382,46 @@
         document.getElementById('stationId').disabled = false;
     }
 
-    function openDeleteConfirmModal(stationId, row) {
-        var title = row.querySelectorAll('td')[1];
+    function openDeleteConfirmModal(type, id, row) {
         var msg = document.getElementById('deleteConfirmMessage');
-        msg.textContent = 'Are you sure you want to delete "' + (title ? title.textContent : stationId) + '"?';
-        document.getElementById('deleteConfirmModal').setAttribute('data-delete-id', stationId);
-        document.getElementById('deleteConfirmModal').classList.add('active');
+        var name = row && row.querySelectorAll('td')[1] ? row.querySelectorAll('td')[1].textContent : id;
+        msg.textContent = type === 'user'
+            ? 'Are you sure you want to delete user "' + name + '"?'
+            : 'Are you sure you want to delete "' + name + '"?';
+        var modal = document.getElementById('deleteConfirmModal');
+        modal.setAttribute('data-delete-type', type);
+        modal.setAttribute('data-delete-id', id);
+        modal.classList.add('active');
     }
 
     function closeDeleteConfirmModal() {
-        document.getElementById('deleteConfirmModal').classList.remove('active');
-        document.getElementById('deleteConfirmModal').removeAttribute('data-delete-id');
+        var modal = document.getElementById('deleteConfirmModal');
+        modal.classList.remove('active');
+        modal.removeAttribute('data-delete-id');
+        modal.removeAttribute('data-delete-type');
+    }
+
+    function openAddUserModal() {
+        document.getElementById('userFormTitle').textContent = 'Add user';
+        document.getElementById('userForm').reset();
+        document.getElementById('userFormAddFields').style.display = 'block';
+        document.getElementById('userFormModal').removeAttribute('data-edit-id');
+        document.getElementById('userFormModal').classList.add('active');
+    }
+
+    function openEditUserModal(userId, row) {
+        var username = row.getAttribute('data-user-username') || (row.querySelectorAll('td')[1] && row.querySelectorAll('td')[1].textContent) || '';
+        document.getElementById('userFormTitle').textContent = 'Edit user';
+        document.getElementById('userUsername').value = username;
+        document.getElementById('userFormAddFields').style.display = 'none';
+        document.getElementById('userFormModal').setAttribute('data-edit-id', userId);
+        document.getElementById('userFormModal').classList.add('active');
+    }
+
+    function closeUserFormModal() {
+        document.getElementById('userFormModal').classList.remove('active');
+        document.getElementById('userFormModal').removeAttribute('data-edit-id');
+        document.getElementById('userFormAddFields').style.display = 'block';
     }
 
     async function loadStationManagement() {
@@ -344,6 +445,27 @@
         }
     }
 
+    async function loadHostManagement() {
+        var container = document.getElementById('hostMgmtList');
+        var loading = document.getElementById('hostMgmtLoading');
+        var errEl = document.getElementById('hostMgmtError');
+        if (!container) return;
+        container.innerHTML = '';
+        loading.style.display = 'block';
+        errEl.style.display = 'none';
+        try {
+            var json = await fetchAllUsers();
+            var list = (json.data != null && Array.isArray(json.data)) ? json.data : (json.Data && Array.isArray(json.Data) ? json.Data : []);
+            renderHostManagementList(list);
+        } catch (e) {
+            console.error(e);
+            loading.style.display = 'none';
+            errEl.style.display = 'block';
+            errEl.textContent = 'Failed to load users. Please try again.';
+            errEl.style.color = '#fca5a5';
+        }
+    }
+
     function init() {
         setDefaultDates();
         document.getElementById('applyDates').addEventListener('click', loadDashboard);
@@ -363,7 +485,41 @@
                 e.preventDefault();
                 showView('station-management');
             });
+            document.getElementById('navHostMgmt').addEventListener('click', function (e) {
+                e.preventDefault();
+                showView('host-management');
+            });
         }
+
+        document.getElementById('addUserBtn').addEventListener('click', openAddUserModal);
+        document.getElementById('userFormCancel').addEventListener('click', closeUserFormModal);
+        document.getElementById('userForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            var editId = document.getElementById('userFormModal').getAttribute('data-edit-id');
+            var username = document.getElementById('userUsername').value.trim();
+            var submitBtn = document.getElementById('userFormSubmit');
+            submitBtn.disabled = true;
+            try {
+                if (editId) {
+                    await updateUser(editId, { username: username });
+                    closeUserFormModal();
+                    loadHostManagement();
+                } else {
+                    var type = document.getElementById('userType').value;
+                    var stationId = document.getElementById('userStationId').value.trim();
+                    await createUser({ username: username, type: type, station_id: stationId });
+                    closeUserFormModal();
+                    loadHostManagement();
+                }
+            } catch (err) {
+                alert(err.message || 'Request failed.');
+            } finally {
+                submitBtn.disabled = false;
+            }
+        });
+        document.getElementById('userFormModal').addEventListener('click', function (e) {
+            if (e.target === this) closeUserFormModal();
+        });
 
         document.getElementById('addStationBtn').addEventListener('click', openAddStationModal);
         document.getElementById('stationFormCancel').addEventListener('click', closeStationFormModal);
@@ -394,14 +550,22 @@
         });
         document.getElementById('deleteConfirmCancel').addEventListener('click', closeDeleteConfirmModal);
         document.getElementById('deleteConfirmBtn').addEventListener('click', async function () {
-            var id = document.getElementById('deleteConfirmModal').getAttribute('data-delete-id');
+            var modal = document.getElementById('deleteConfirmModal');
+            var type = modal.getAttribute('data-delete-type');
+            var id = modal.getAttribute('data-delete-id');
             if (!id) return;
             var btn = document.getElementById('deleteConfirmBtn');
             btn.disabled = true;
             try {
-                await deleteStation(id);
-                closeDeleteConfirmModal();
-                loadStationManagement();
+                if (type === 'user') {
+                    await deleteUser(id);
+                    closeDeleteConfirmModal();
+                    loadHostManagement();
+                } else {
+                    await deleteStation(id);
+                    closeDeleteConfirmModal();
+                    loadStationManagement();
+                }
             } catch (err) {
                 alert(err.message || 'Delete failed.');
             } finally {

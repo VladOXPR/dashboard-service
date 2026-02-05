@@ -54,6 +54,13 @@ function proxyToCuub(pathname, res, options) {
 
 app.get('/api/users', (req, res) => proxyToCuub('/users/', res));
 app.get('/api/users/:id', (req, res) => proxyToCuub(`/users/${req.params.id}`, res));
+app.post('/api/users', (req, res) => {
+    proxyToCuub('/users/', res, { method: 'POST', body: JSON.stringify(req.body || {}) });
+});
+app.patch('/api/users/:id', (req, res) => {
+    proxyToCuub(`/users/${req.params.id}`, res, { method: 'PATCH', body: JSON.stringify(req.body || {}) });
+});
+app.delete('/api/users/:id', (req, res) => proxyToCuub(`/users/${req.params.id}`, res, { method: 'DELETE' }));
 app.get('/api/stations', (req, res) => proxyToCuub('/stations/', res));
 app.get('/api/stations/:id', (req, res) => proxyToCuub(`/stations/${req.params.id}`, res));
 app.post('/api/stations', (req, res) => {
