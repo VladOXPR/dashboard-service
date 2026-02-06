@@ -184,6 +184,22 @@
         .view-station-mgmt.visible { display: block; }
         .view-host-mgmt { display: none; }
         .view-host-mgmt.visible { display: block; }
+        .view-scans { display: none; }
+        .view-scans.visible { display: block; }
+        .scans-summary {
+            background: #1a1a1a;
+            border: 1px solid #262626;
+            border-radius: 12px;
+            padding: 1rem 1.25rem;
+            margin-bottom: 1.25rem;
+        }
+        .scans-summary h3 { font-size: 0.95rem; margin-bottom: 0.75rem; color: #a3a3a3; }
+        .scans-summary .most-scanned { font-weight: 600; color: #0099FF; margin-bottom: 0.5rem; }
+        .scans-summary .type-list { font-size: 0.9rem; color: #d4d4d4; }
+        .scans-table { width: 100%; border-collapse: collapse; background: #1a1a1a; border-radius: 12px; overflow: hidden; border: 1px solid #262626; }
+        .scans-table th, .scans-table td { padding: 0.75rem 1rem; text-align: left; border-bottom: 1px solid #262626; font-size: 0.9rem; }
+        .scans-table th { background: #262626; color: #a3a3a3; font-weight: 600; }
+        .scans-table tr:last-child td { border-bottom: none; }
         .modal-box select {
             width: 100%;
             padding: 0.5rem 0.75rem;
@@ -368,13 +384,15 @@
                 margin-bottom: 0.75rem;
             }
             #stationMgmtList,
-            #hostMgmtList {
+            #hostMgmtList,
+            #scansList {
                 overflow-x: auto;
                 -webkit-overflow-scrolling: touch;
                 margin: 0 -1rem;
                 padding: 0 1rem;
             }
-            .station-mgmt-table {
+            .station-mgmt-table,
+            .scans-table {
                 min-width: 520px;
                 font-size: 0.85rem;
             }
@@ -431,6 +449,7 @@
                 <a href="#" id="navPerformance" class="active">Performance</a>
                 <a href="#" id="navStationMgmt">Station Management</a>
                 <a href="#" id="navHostMgmt">Host Management</a>
+                <a href="#" id="navScans">Scans</a>
             </nav>
         </div>
         <div class="date-range" id="headerDateRange">
@@ -468,6 +487,12 @@
         <div class="loading" id="hostMgmtLoading" style="display: none;">Loading…</div>
         <div class="error" id="hostMgmtError" style="display: none;"></div>
         <div id="hostMgmtList"></div>
+    </main>
+    <main class="view-scans" id="viewScans">
+        <div class="scans-summary" id="scansSummary" style="display: none;"></div>
+        <div class="loading" id="scansLoading" style="display: none;">Loading…</div>
+        <div class="error" id="scansError" style="display: none;"></div>
+        <div id="scansList"></div>
     </main>
     <div class="modal-overlay" id="userFormModal">
         <div class="modal-box">

@@ -188,21 +188,26 @@
         var perf = document.getElementById('viewPerformance');
         var stationMgmt = document.getElementById('viewStationMgmt');
         var hostMgmt = document.getElementById('viewHostMgmt');
+        var scansView = document.getElementById('viewScans');
         var dateRange = document.getElementById('headerDateRange');
         var summaryBar = document.getElementById('summaryBar');
         var navPerf = document.getElementById('navPerformance');
         var navStationMgmt = document.getElementById('navStationMgmt');
         var navHostMgmt = document.getElementById('navHostMgmt');
+        var navScans = document.getElementById('navScans');
         if (perf) perf.classList.toggle('hidden', name !== 'performance');
         if (stationMgmt) stationMgmt.classList.toggle('visible', name === 'station-management');
         if (hostMgmt) hostMgmt.classList.toggle('visible', name === 'host-management');
+        if (scansView) scansView.classList.toggle('visible', name === 'scans');
         if (dateRange) dateRange.style.display = name === 'performance' ? 'flex' : 'none';
         if (summaryBar) summaryBar.style.display = name === 'performance' ? 'flex' : 'none';
         if (navPerf) navPerf.classList.toggle('active', name === 'performance');
         if (navStationMgmt) navStationMgmt.classList.toggle('active', name === 'station-management');
         if (navHostMgmt) navHostMgmt.classList.toggle('active', name === 'host-management');
+        if (navScans) navScans.classList.toggle('active', name === 'scans');
         if (name === 'station-management') loadStationManagement();
         if (name === 'host-management') loadHostManagement();
+        if (name === 'scans') loadScans();
     }
 
     async function fetchAllStations() {
@@ -211,6 +216,91 @@
 
     async function fetchAllUsers() {
         return api('/api/users');
+    }
+
+    async function fetchScans() {
+        return api('/api/scans');
+    }
+
+    function formatDurationAfterRent(d) {
+        if (!d || typeof d !== 'object') return '—';
+        var h = d.hours != null ? d.hours : 0;
+        var m = d.minutes != null ? d.minutes : 0;
+        var s = d.seconds != null ? d.seconds : 0;
+        var parts = [];
+        if (h) parts.push(h + 'h');
+        if (m) parts.push(m + 'm');
+        parts.push(s + 's');
+        return parts.join(' ');
+    }
+
+    function renderScansSummary(scans) {
+        var el = document.getElementById('scansSummary');
+        if (!el) return;
+        if (!Array.isArray(scans) || scans.length === 0) {
+            el.style.display = 'none';
+            return;
+        }
+        var byType = {};
+        scans.forEach(function (s) {
+            var t = s.sticker_type || 'Unknown';
+            byType[t] = (byType[t] || 0) + 1;
+        });
+        var typeCounts = Object.keys(byType).map(function (t) { return { type: t, count: byType[t] }; });
+        typeCounts.sort(function (a, b) { return a.count - b.count; });
+        var most = typeCounts.length ? typeCounts[typeCounts.length - 1] : null;
+        var mostLine = most ? 'Most scanned type: ' + most.type + ' (' + most.count + ' scans)' : '';
+        var listLine = typeCounts.length ? 'By quantity (ascending): ' + typeCounts.map(function (x) { return x.type + ' (' + x.count + ')'; }).join(', ') : '';
+        el.innerHTML = '<h3>Summary</h3><div class="most-scanned">' + escapeHtml(mostLine) + '</div><div class="type-list">' + escapeHtml(listLine) + '</div>';
+        el.style.display = 'block';
+    }
+
+    function renderScansList(scans) {
+        var container = document.getElementById('scansList');
+        if (!container) return;
+        if (!Array.isArray(scans) || scans.length === 0) {
+            container.innerHTML = '<p style="color: #a3a3a3;">No scans found.</p>';
+            return;
+        }
+        var html = '<table class="scans-table"><thead><tr><th>Scan ID</th><th>Sticker ID</th><th>Order ID</th><th>Scan time</th><th>Sticker type</th><th>Duration after rent</th><th>SIZL</th></tr></thead><tbody>';
+        scans.forEach(function (s) {
+            var scanId = escapeHtml(String(s.scan_id || ''));
+            var stickerId = escapeHtml(String(s.sticker_id || ''));
+            var orderId = escapeHtml(String(s.order_id || ''));
+            var scanTime = escapeHtml(String(s.scan_time || ''));
+            var stickerType = escapeHtml(String(s.sticker_type || ''));
+            var duration = escapeHtml(formatDurationAfterRent(s.duration_after_rent));
+            var sizl = s.sizl === true ? 'Yes' : 'No';
+            html += '<tr><td>' + scanId + '</td><td>' + stickerId + '</td><td>' + orderId + '</td><td>' + scanTime + '</td><td>' + stickerType + '</td><td>' + duration + '</td><td>' + sizl + '</td></tr>';
+        });
+        html += '</tbody></table>';
+        container.innerHTML = html;
+    }
+
+    async function loadScans() {
+        var summary = document.getElementById('scansSummary');
+        var container = document.getElementById('scansList');
+        var loading = document.getElementById('scansLoading');
+        var errEl = document.getElementById('scansError');
+        if (!container) return;
+        if (summary) summary.style.display = 'none';
+        container.innerHTML = '';
+        loading.style.display = 'block';
+        errEl.style.display = 'none';
+        try {
+            var json = await fetchScans();
+            var list = Array.isArray(json) ? json : (json.data != null && Array.isArray(json.data) ? json.data : []);
+            if (!Array.isArray(list)) list = [];
+            renderScansSummary(list);
+            renderScansList(list);
+        } catch (e) {
+            console.error(e);
+            errEl.style.display = 'block';
+            errEl.textContent = 'Failed to load scans. Please try again.';
+            errEl.style.color = '#fca5a5';
+        } finally {
+            loading.style.display = 'none';
+        }
     }
 
     async function createUser(payload) {
@@ -488,6 +578,10 @@
             document.getElementById('navHostMgmt').addEventListener('click', function (e) {
                 e.preventDefault();
                 showView('host-management');
+            });
+            document.getElementById('navScans').addEventListener('click', function (e) {
+                e.preventDefault();
+                showView('scans');
             });
         }
 

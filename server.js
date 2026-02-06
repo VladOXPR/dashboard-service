@@ -73,6 +73,7 @@ app.delete('/api/stations/:id', (req, res) => proxyToCuub(`/stations/${req.param
 app.get('/api/rents/:stationId/:dateRange', (req, res) => {
     proxyToCuub(`/rents/${req.params.stationId}/${req.params.dateRange}`, res);
 });
+app.get('/api/scans', (req, res) => proxyToCuub('/scans/', res));
 
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'login.html')));
 app.get('/login', (req, res) => res.sendFile(path.join(__dirname, 'login.html')));
