@@ -303,9 +303,30 @@
             background: #0099FF;
             color: white;
             cursor: pointer;
-            margin-bottom: 1rem;
         }
         .add-station-btn:hover { background: #008ae6; }
+        .station-view-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+        .see-map-btn {
+            padding: 0.75rem 1.25rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+            border: 1px solid #fff;
+            border-radius: 8px;
+            background: #000;
+            color: #fff;
+            text-decoration: none;
+            cursor: pointer;
+            display: inline-block;
+        }
+        .see-map-btn:hover {
+            background: #262626;
+        }
         .station-mgmt-table {
             width: 100%;
             border-collapse: collapse;
@@ -467,11 +488,20 @@
                 padding: 1rem;
             }
             .station-title { font-size: 1rem; }
+            .station-view-actions {
+                flex-direction: column;
+            }
+            .station-view-actions .see-map-btn {
+                width: 100%;
+                min-height: 48px;
+                text-align: center;
+                box-sizing: border-box;
+            }
             .add-station-btn {
                 width: 100%;
                 min-height: 48px;
                 padding: 1rem;
-                margin-bottom: 0.75rem;
+                margin-bottom: 0;
             }
             #stationMgmtList,
             #hostMgmtList,
@@ -588,7 +618,10 @@
         <div class="stations" id="stations" style="display: none;"></div>
     </main>
     <main class="view-station-mgmt" id="viewStationMgmt">
-        <button type="button" class="add-station-btn" id="addStationBtn">Add station</button>
+        <div class="station-view-actions">
+            <button type="button" class="add-station-btn" id="addStationBtn">Add station</button>
+            <a href="https://map.cuub.tech" class="see-map-btn" target="_blank" rel="noopener">See map</a>
+        </div>
         <div class="loading" id="mgmtLoading" style="display: none;">Loading…</div>
         <div class="error" id="mgmtError" style="display: none;"></div>
         <div id="stationMgmtList"></div>
