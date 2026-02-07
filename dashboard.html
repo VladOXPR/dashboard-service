@@ -203,7 +203,10 @@
             gap: 0.5rem;
             flex-wrap: wrap;
         }
-        .date-range label { font-size: 0.85rem; color: #a3a3a3; }
+        .date-range-arrow {
+            font-size: 1rem;
+            color: #737373;
+        }
         .date-range input {
             padding: 0.5rem 0.75rem;
             font-size: 0.9rem;
@@ -561,7 +564,6 @@
                 flex-wrap: wrap;
                 gap: 0.5rem;
             }
-            .date-range label { flex: 0 0 auto; }
             .date-range input {
                 flex: 1;
                 min-width: 0;
@@ -714,10 +716,9 @@
                     </div>
                 </div>
                 <div class="date-range" id="headerDateRange">
-                    <label for="startDate">From</label>
-                    <input type="date" id="startDate">
-                    <label for="endDate">To</label>
-                    <input type="date" id="endDate">
+                    <input type="date" id="startDate" aria-label="Start date">
+                    <span class="date-range-arrow" aria-hidden="true">→</span>
+                    <input type="date" id="endDate" aria-label="End date">
                     <button type="button" id="applyDates">Apply</button>
                 </div>
                 <a href="/login" id="headerLogout" class="header-logout" style="display: none;">Log out</a>
