@@ -51,7 +51,7 @@
         }
         .side-panel-nav {
             flex: 1;
-            padding: 0.75rem 0;
+            padding: 0.75rem 10px;
             display: flex;
             flex-direction: column;
         }
@@ -182,8 +182,11 @@
         .header-logout:hover { color: #e5e5e5; }
         .content-header {
             background: #000;
-            border-bottom: 1px solid #262626;
-            padding: 1rem 1.5rem;
+            border: 1px solid #262626;
+            border-radius: 12px;
+            padding: 1rem 1.25rem;
+            margin: 1.5rem;
+            margin-bottom: 1rem;
             display: flex;
             flex-wrap: wrap;
             align-items: center;
@@ -337,12 +340,48 @@
             background: #000;
             border: 1px solid #262626;
             border-radius: 12px;
-            padding: 1rem 1.25rem;
+            padding: 1.5rem 1.5rem;
             margin-bottom: 1.25rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 2rem;
+            flex-wrap: wrap;
         }
-        .scans-summary h3 { font-size: 0.95rem; margin-bottom: 0.75rem; color: #a3a3a3; }
-        .scans-summary .most-scanned { font-weight: 600; color: #0099FF; margin-bottom: 0.5rem; }
-        .scans-summary .type-list { font-size: 0.9rem; color: #d4d4d4; }
+        .scans-summary-total {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+        .scans-summary-total .label {
+            font-size: 15px;
+            color: #a3a3a3;
+        }
+        .scans-summary-total .value {
+            font-size: 75px;
+            font-weight: 600;
+            color: #e5e5e5;
+        }
+        .scans-summary-types {
+            display: flex;
+            flex-direction: row;
+            gap: 2rem;
+            flex-wrap: wrap;
+        }
+        .scans-summary-type {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+        .scans-summary-type .label {
+            font-size: 15px;
+            color: #a3a3a3;
+        }
+        .scans-summary-type .value {
+            font-size: 35px;
+            font-weight: 600;
+            color: #e5e5e5;
+        }
         .scans-table { width: 100%; border-collapse: collapse; background: #000; border-radius: 12px; overflow: hidden; border: 1px solid #262626; }
         .scans-table th, .scans-table td { padding: 0.75rem 1rem; text-align: left; border-bottom: 1px solid #262626; font-size: 0.9rem; }
         .scans-table td { background: #000; }
@@ -359,6 +398,54 @@
             color: #e5e5e5;
         }
         .modal-box select:focus { outline: none; border-color: #0099FF; }
+        .station-ids-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            min-height: 2rem;
+        }
+        .station-id-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.35rem 0.5rem;
+            font-size: 0.85rem;
+            background: #262626;
+            border-radius: 6px;
+            color: #e5e5e5;
+            border: 1px solid #333;
+        }
+        .station-id-chip .btn-remove-chip {
+            padding: 0 0.25rem;
+            font-size: 1rem;
+            line-height: 1;
+            border: none;
+            background: transparent;
+            color: #a3a3a3;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        .station-id-chip .btn-remove-chip:hover {
+            color: #fca5a5;
+        }
+        .station-ids-add {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+        .station-ids-add select { flex: 1; margin-bottom: 0; }
+        .station-ids-add button {
+            padding: 0.5rem 1rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 6px;
+            background: #262626;
+            color: #e5e5e5;
+            cursor: pointer;
+        }
+        .station-ids-add button:hover { background: #333; }
         .add-station-btn {
             padding: 0.75rem 1.25rem;
             font-size: 0.9rem;
@@ -414,6 +501,10 @@
             font-weight: 600;
         }
         .station-mgmt-table tr:last-child td { border-bottom: none; }
+        .station-mgmt-table .table-actions {
+            display: flex;
+            gap: 5px;
+        }
         .station-mgmt-table .btn-edit,
         .station-mgmt-table .btn-delete {
             padding: 0.4rem 0.75rem;
@@ -555,6 +646,8 @@
                 margin-top: 0.5rem;
             }
             .content-header {
+                margin: 1rem;
+                margin-bottom: 0.75rem;
                 padding: 0.75rem 1rem;
                 flex-direction: column;
                 align-items: stretch;
@@ -630,8 +723,6 @@
             .station-mgmt-table .btn-delete {
                 min-height: 44px;
                 padding: 0.6rem 0.75rem;
-                margin-bottom: 0.25rem;
-                margin-right: 0.25rem;
             }
             .modal-overlay {
                 padding: 1rem;
@@ -739,7 +830,9 @@
         <div id="stationMgmtList"></div>
     </main>
     <main class="view-host-mgmt" id="viewHostMgmt">
-        <button type="button" class="add-station-btn" id="addUserBtn">Add user</button>
+        <div class="station-view-actions">
+            <button type="button" class="add-station-btn" id="addUserBtn">Add user</button>
+        </div>
         <div class="loading" id="hostMgmtLoading" style="display: none;">Loading…</div>
         <div class="error" id="hostMgmtError" style="display: none;"></div>
         <div id="hostMgmtList"></div>
@@ -769,6 +862,23 @@
                     </select>
                     <label for="userStationId">Station ID</label>
                     <input type="text" id="userStationId" name="station_id" placeholder="e.g. CUBT062510000029">
+                </div>
+                <div id="userFormEditFields" style="display: none;">
+                    <label for="userTypeEdit">Type</label>
+                    <select id="userTypeEdit" name="type">
+                        <option value="HOST">HOST</option>
+                        <option value="DISTRIBUTER">DISTRIBUTER</option>
+                        <option value="DISTRIBUTOR">DISTRIBUTOR</option>
+                        <option value="ADMIN">ADMIN</option>
+                    </select>
+                    <label>Station IDs</label>
+                    <div id="userStationIdsList" class="station-ids-list"></div>
+                    <div class="station-ids-add">
+                        <select id="userAddStationSelect">
+                            <option value="">— Add station —</option>
+                        </select>
+                        <button type="button" id="userAddStationBtn">Add</button>
+                    </div>
                 </div>
                 <div class="modal-actions">
                     <button type="button" class="btn-cancel" id="userFormCancel">Cancel</button>

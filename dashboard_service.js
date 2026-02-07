@@ -243,18 +243,20 @@
             el.style.display = 'none';
             return;
         }
+        var total = scans.length;
         var byType = {};
         scans.forEach(function (s) {
             var t = s.sticker_type || 'Unknown';
             byType[t] = (byType[t] || 0) + 1;
         });
         var typeCounts = Object.keys(byType).map(function (t) { return { type: t, count: byType[t] }; });
-        typeCounts.sort(function (a, b) { return a.count - b.count; });
-        var most = typeCounts.length ? typeCounts[typeCounts.length - 1] : null;
-        var mostLine = most ? 'Most scanned type: ' + most.type + ' (' + most.count + ' scans)' : '';
-        var listLine = typeCounts.length ? 'By quantity (ascending): ' + typeCounts.map(function (x) { return x.type + ' (' + x.count + ')'; }).join(', ') : '';
-        el.innerHTML = '<h3>Summary</h3><div class="most-scanned">' + escapeHtml(mostLine) + '</div><div class="type-list">' + escapeHtml(listLine) + '</div>';
-        el.style.display = 'block';
+        typeCounts.sort(function (a, b) { return b.count - a.count; });
+        var top4 = typeCounts.slice(0, 4);
+        var typesHtml = top4.map(function (x) {
+            return '<div class="scans-summary-type"><span class="label">' + escapeHtml(x.type) + '</span><span class="value">' + x.count + '</span></div>';
+        }).join('');
+        el.innerHTML = '<div class="scans-summary-total"><span class="label">Total Scans</span><span class="value">' + total + '</span></div><div class="scans-summary-types">' + typesHtml + '</div>';
+        el.style.display = 'flex';
     }
 
     function renderScansList(scans) {
@@ -291,8 +293,9 @@
         errEl.style.display = 'none';
         try {
             var json = await fetchScans();
-            var list = Array.isArray(json) ? json : (json.data != null && Array.isArray(json.data) ? json.data : []);
-            if (!Array.isArray(list)) list = [];
+            var raw = Array.isArray(json) ? json : (json.data != null && Array.isArray(json.data) ? json.data : []);
+            if (!Array.isArray(raw)) raw = [];
+            var list = raw.filter(function (s) { return s.order_id != null && s.order_id !== ''; });
             renderScansSummary(list);
             renderScansList(list);
         } catch (e) {
@@ -386,7 +389,7 @@
             var open = s.open_slots != null ? s.open_slots : '—';
             html += '<tr data-station-id="' + id + '">' +
                 '<td>' + id + '</td><td>' + title + '</td><td>' + lat + '</td><td>' + lng + '</td><td>' + updated + '</td><td>' + filled + '</td><td>' + open + '</td>' +
-                '<td><button type="button" class="btn-edit" data-action="edit">Edit</button><button type="button" class="btn-delete" data-action="delete">Delete</button></td></tr>';
+                '<td><div class="table-actions"><button type="button" class="btn-edit" data-action="edit">Edit</button><button type="button" class="btn-delete" data-action="delete">Delete</button></div></td></tr>';
         });
         html += '</tbody></table>';
         container.innerHTML = html;
@@ -427,9 +430,10 @@
             var created = escapeHtml(String(u.created_at || ''));
             var updated = escapeHtml(String(u.updated_at || ''));
             var stations = Array.isArray(u.stations) ? u.stations.join(', ') : '';
-            html += '<tr data-user-id="' + id + '" data-user-username="' + escapeHtml(username) + '">' +
+            var stationsJson = JSON.stringify(Array.isArray(u.stations) ? u.stations : []);
+            html += '<tr data-user-id="' + id + '" data-user-username="' + escapeHtml(username) + '" data-user-type="' + escapeHtml(type) + '" data-user-stations="' + escapeHtml(stationsJson) + '">' +
                 '<td>' + id + '</td><td>' + username + '</td><td>' + type + '</td><td>' + created + '</td><td>' + updated + '</td><td>' + escapeHtml(stations) + '</td>' +
-                '<td><button type="button" class="btn-edit">Edit</button><button type="button" class="btn-delete">Delete</button></td></tr>';
+                '<td><div class="table-actions"><button type="button" class="btn-edit">Edit</button><button type="button" class="btn-delete">Delete</button></div></td></tr>';
         });
         html += '</tbody></table>';
         container.innerHTML = html;
@@ -497,23 +501,86 @@
         document.getElementById('userFormTitle').textContent = 'Add user';
         document.getElementById('userForm').reset();
         document.getElementById('userFormAddFields').style.display = 'block';
+        document.getElementById('userFormEditFields').style.display = 'none';
         document.getElementById('userFormModal').removeAttribute('data-edit-id');
         document.getElementById('userFormModal').classList.add('active');
     }
 
-    function openEditUserModal(userId, row) {
+    function renderUserStationChips(container, stationIds, onRemove) {
+        container.innerHTML = '';
+        (stationIds || []).forEach(function (sid) {
+            var chip = document.createElement('span');
+            chip.className = 'station-id-chip';
+            chip.innerHTML = escapeHtml(sid) + '<button type="button" class="btn-remove-chip" data-station-id="' + escapeHtml(sid) + '" aria-label="Remove">×</button>';
+            chip.querySelector('.btn-remove-chip').addEventListener('click', function () {
+                onRemove(sid);
+            });
+            container.appendChild(chip);
+        });
+    }
+
+    async function openEditUserModal(userId, row) {
         var username = row.getAttribute('data-user-username') || (row.querySelectorAll('td')[1] && row.querySelectorAll('td')[1].textContent) || '';
+        var type = row.getAttribute('data-user-type') || '';
+        var stationsJson = row.getAttribute('data-user-stations') || '[]';
+        var stationIds = [];
+        try { stationIds = JSON.parse(stationsJson) || []; } catch (e) {}
         document.getElementById('userFormTitle').textContent = 'Edit user';
         document.getElementById('userUsername').value = username;
+        document.getElementById('userTypeEdit').value = type || 'HOST';
         document.getElementById('userFormAddFields').style.display = 'none';
+        document.getElementById('userFormEditFields').style.display = 'block';
         document.getElementById('userFormModal').setAttribute('data-edit-id', userId);
         document.getElementById('userFormModal').classList.add('active');
+        var listEl = document.getElementById('userStationIdsList');
+        var addSelect = document.getElementById('userAddStationSelect');
+        addSelect.innerHTML = '<option value="">— Add station —</option>';
+        var currentIds = stationIds.slice();
+        function refreshChips() {
+            renderUserStationChips(listEl, currentIds, function (sid) {
+                currentIds = currentIds.filter(function (id) { return id !== sid; });
+                refreshChips();
+                refreshAddSelect();
+            });
+        }
+        function refreshAddSelect() {
+            var opts = addSelect.querySelectorAll('option');
+            for (var i = opts.length - 1; i > 0; i--) opts[i].remove();
+            var stations = window._cachedStations || [];
+            stations.forEach(function (s) {
+                var sid = String(s.id || '');
+                if (sid && currentIds.indexOf(sid) === -1) {
+                    var opt = document.createElement('option');
+                    opt.value = sid;
+                    opt.textContent = sid + (s.title ? ' (' + s.title + ')' : '');
+                    addSelect.appendChild(opt);
+                }
+            });
+        }
+        refreshChips();
+        try {
+            var json = await fetchAllStations();
+            var list = (json.data != null && Array.isArray(json.data)) ? json.data : (json.Data && Array.isArray(json.Data) ? json.Data : []);
+            window._cachedStations = list;
+        } catch (e) { window._cachedStations = []; }
+        refreshAddSelect();
+        document.getElementById('userAddStationBtn').onclick = function () {
+            var val = addSelect.value;
+            if (val && currentIds.indexOf(val) === -1) {
+                currentIds.push(val);
+                refreshChips();
+                refreshAddSelect();
+            }
+        };
+        document.getElementById('userFormModal')._editStationIds = function () { return currentIds; };
     }
 
     function closeUserFormModal() {
         document.getElementById('userFormModal').classList.remove('active');
         document.getElementById('userFormModal').removeAttribute('data-edit-id');
+        document.getElementById('userFormModal')._editStationIds = null;
         document.getElementById('userFormAddFields').style.display = 'block';
+        document.getElementById('userFormEditFields').style.display = 'none';
     }
 
     async function loadStationManagement() {
@@ -632,13 +699,16 @@
         document.getElementById('userFormCancel').addEventListener('click', closeUserFormModal);
         document.getElementById('userForm').addEventListener('submit', async function (e) {
             e.preventDefault();
-            var editId = document.getElementById('userFormModal').getAttribute('data-edit-id');
+            var modal = document.getElementById('userFormModal');
+            var editId = modal.getAttribute('data-edit-id');
             var username = document.getElementById('userUsername').value.trim();
             var submitBtn = document.getElementById('userFormSubmit');
             submitBtn.disabled = true;
             try {
                 if (editId) {
-                    await updateUser(editId, { username: username });
+                    var type = document.getElementById('userTypeEdit').value;
+                    var stationIds = (typeof modal._editStationIds === 'function') ? modal._editStationIds() : [];
+                    await updateUser(editId, { username: username, type: type, station_ids: stationIds });
                     closeUserFormModal();
                     loadHostManagement();
                 } else {
