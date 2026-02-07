@@ -4,8 +4,15 @@
     const submitBtn = document.getElementById('submitBtn');
     const errorEl = document.getElementById('error');
 
-    if (sessionStorage.getItem('cuub_user')) {
-        window.location.href = '/dashboard';
+    const existingUser = sessionStorage.getItem('cuub_user');
+    if (existingUser) {
+        try {
+            const u = JSON.parse(existingUser);
+            const type = (u.type || 'host').toLowerCase();
+            window.location.href = '/' + type;
+        } catch (e) {
+            window.location.href = '/host';
+        }
         return;
     }
 
@@ -49,7 +56,8 @@
                 return;
             }
             sessionStorage.setItem('cuub_user', JSON.stringify(user));
-            window.location.href = '/dashboard';
+            const type = (user.type || 'host').toLowerCase();
+            window.location.href = '/' + type;
         } catch (err) {
             console.error(err);
             showError('Something went wrong. Please try again.');

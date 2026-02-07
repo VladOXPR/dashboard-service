@@ -77,7 +77,10 @@ app.get('/api/scans', (req, res) => proxyToCuub('/scans/', res));
 
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'login.html')));
 app.get('/login', (req, res) => res.sendFile(path.join(__dirname, 'login.html')));
-app.get('/dashboard', (req, res) => res.sendFile(path.join(__dirname, 'dashboard.html')));
+const USER_TYPES = ['host', 'admin', 'distributer', 'distributor'];
+USER_TYPES.forEach(function (type) {
+    app.get('/' + type, (req, res) => res.sendFile(path.join(__dirname, 'dashboard.html')));
+});
 
 const PORT = process.env.PORT || 8080;
 const HOST = '0.0.0.0';
