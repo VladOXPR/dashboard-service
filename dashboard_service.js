@@ -561,8 +561,36 @@
     function init() {
         setDefaultDates();
         document.getElementById('applyDates').addEventListener('click', loadDashboard);
+        var hamburgerBtn = document.getElementById('hamburgerBtn');
+        var hamburgerMenu = document.getElementById('hamburgerMenu');
+        var hamburgerOverlay = document.getElementById('hamburgerOverlay');
+        function closeHamburgerMenu() {
+            if (hamburgerMenu) hamburgerMenu.classList.remove('open');
+            if (hamburgerBtn) hamburgerBtn.classList.remove('open');
+            document.body.classList.remove('hamburger-open');
+            if (hamburgerOverlay) hamburgerOverlay.setAttribute('aria-hidden', 'true');
+        }
+        function openHamburgerMenu() {
+            if (hamburgerMenu) hamburgerMenu.classList.add('open');
+            if (hamburgerBtn) hamburgerBtn.classList.add('open');
+            document.body.classList.add('hamburger-open');
+            if (hamburgerOverlay) hamburgerOverlay.setAttribute('aria-hidden', 'false');
+        }
+        if (hamburgerBtn && hamburgerMenu) {
+            hamburgerBtn.addEventListener('click', function () {
+                if (hamburgerMenu.classList.contains('open')) {
+                    closeHamburgerMenu();
+                } else {
+                    openHamburgerMenu();
+                }
+            });
+        }
+        if (hamburgerOverlay) {
+            hamburgerOverlay.addEventListener('click', closeHamburgerMenu);
+        }
         document.getElementById('logout').addEventListener('click', function (e) {
             e.preventDefault();
+            closeHamburgerMenu();
             redirectToLogin();
         });
 
@@ -580,19 +608,23 @@
             showView('performance');
         }
         document.getElementById('navPerformance').addEventListener('click', function (e) {
-                e.preventDefault();
-                showView('performance');
-            });
+            e.preventDefault();
+            closeHamburgerMenu();
+            showView('performance');
+        });
         document.getElementById('navStationMgmt').addEventListener('click', function (e) {
             e.preventDefault();
+            closeHamburgerMenu();
             showView('station-management');
         });
         document.getElementById('navHostMgmt').addEventListener('click', function (e) {
             e.preventDefault();
+            closeHamburgerMenu();
             showView('host-management');
         });
         document.getElementById('navScans').addEventListener('click', function (e) {
             e.preventDefault();
+            closeHamburgerMenu();
             showView('scans');
         });
 

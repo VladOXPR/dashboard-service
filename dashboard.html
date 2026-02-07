@@ -71,6 +71,7 @@
         .side-panel-nav a.active {
             color: #e5e5e5;
             background: #262626;
+            border-radius: 6px;
         }
         .side-panel-nav .nav-icon {
             width: 12px;
@@ -102,6 +103,67 @@
             text-decoration: none;
         }
         .logout:hover { background: #1a1a1a; color: #e5e5e5; }
+        .hamburger-btn {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            padding: 0;
+            border: none;
+            border-radius: 8px;
+            background: transparent;
+            color: #e5e5e5;
+            cursor: pointer;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .hamburger-btn:hover {
+            background: #262626;
+        }
+        .hamburger-line {
+            display: block;
+            width: 20px;
+            height: 2px;
+            background: currentColor;
+            border-radius: 1px;
+            transition: transform 0.25s ease, opacity 0.2s ease;
+        }
+        .hamburger-btn.open .hamburger-line:nth-child(1) {
+            transform: translateY(7px) rotate(45deg);
+        }
+        .hamburger-btn.open .hamburger-line:nth-child(2) {
+            opacity: 0;
+        }
+        .hamburger-btn.open .hamburger-line:nth-child(3) {
+            transform: translateY(-7px) rotate(-45deg);
+        }
+        .hamburger-menu {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+        .hamburger-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 999;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transition: opacity 0.25s ease, visibility 0.25s ease;
+        }
+        body.hamburger-open .hamburger-overlay {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+        }
+        body.hamburger-open .side-panel {
+            z-index: 1000;
+        }
         .main-content {
             flex: 1;
             display: flex;
@@ -420,32 +482,74 @@
                 width: 100%;
                 height: auto;
                 min-height: 0;
-                flex-direction: row;
-                flex-wrap: wrap;
+                flex-direction: column;
+                flex-wrap: nowrap;
                 border-right: none;
                 border-bottom: 1px solid #1a1a1a;
             }
             .main-content { margin-left: 0; }
-            .side-panel-header { padding: 0.75rem 1rem; }
+            .side-panel-header {
+                padding: 0.75rem 1rem;
+                position: relative;
+            }
+            .hamburger-btn {
+                display: flex !important;
+                margin-left: auto;
+            }
             .side-panel-separator { display: none; }
-            .side-panel-nav {
-                flex: 1;
-                display: flex;
-                flex-wrap: wrap;
-                padding: 0.5rem;
-                gap: 0.25rem;
+            .hamburger-menu {
+                flex-direction: column;
+                padding: 0.5rem 1rem 1rem;
+                border-top: 1px solid #262626;
+                background: #000;
+                max-height: 0;
+                opacity: 0;
+                overflow: hidden;
+                transition: max-height 0.3s ease, opacity 0.25s ease;
             }
-            .side-panel-nav a {
-                flex: 1;
-                min-width: 80px;
-                justify-content: center;
-                padding: 0.6rem 0.5rem;
+            .hamburger-menu.open {
+                max-height: 400px;
+                opacity: 1;
+            }
+            .hamburger-menu .side-panel-nav {
+                flex: none;
+                flex-direction: column;
+                flex-wrap: nowrap;
+                padding: 0.5rem 0 0;
+            }
+            .hamburger-menu .side-panel-nav a {
+                flex: none;
+                min-width: auto;
                 min-height: 44px;
+                font-weight: 600;
+                opacity: 0;
+                transform: translateY(-8px);
+                transition: opacity 0.2s ease, transform 0.2s ease, background 0.2s, color 0.2s;
             }
-            .side-panel-footer {
+            .hamburger-menu.open .side-panel-nav a {
+                opacity: 1;
+                transform: translateY(0);
+            }
+            .hamburger-menu.open .side-panel-nav a:nth-child(1) { transition-delay: 0.05s; }
+            .hamburger-menu.open .side-panel-nav a:nth-child(2) { transition-delay: 0.08s; }
+            .hamburger-menu.open .side-panel-nav a:nth-child(3) { transition-delay: 0.11s; }
+            .hamburger-menu.open .side-panel-nav a:nth-child(4) { transition-delay: 0.14s; }
+            .hamburger-menu .logout {
+                font-weight: 600;
+                opacity: 0;
+                transform: translateY(-8px);
+                transition: opacity 0.2s ease, transform 0.2s ease, background 0.2s, color 0.2s;
+            }
+            .hamburger-menu.open .logout {
+                opacity: 1;
+                transform: translateY(0);
+                transition-delay: 0.17s;
+            }
+            .hamburger-menu .side-panel-footer {
                 width: 100%;
-                padding: 0.5rem 1rem;
-                border-top: none;
+                padding: 0.75rem 0 0;
+                border-top: 1px solid #262626;
+                margin-top: 0.5rem;
             }
             .content-header {
                 padding: 0.75rem 1rem;
@@ -566,8 +670,14 @@
             <div class="side-panel-header">
                 <img src="CUUB_Logo.png" alt="CUUB" class="side-panel-logo">
                 <span class="user-badge" id="userBadge"></span>
+                <button type="button" class="hamburger-btn" id="hamburgerBtn" aria-label="Menu">
+                    <span class="hamburger-line"></span>
+                    <span class="hamburger-line"></span>
+                    <span class="hamburger-line"></span>
+                </button>
             </div>
             <div class="side-panel-separator"></div>
+            <div class="hamburger-menu" id="hamburgerMenu">
             <nav class="side-panel-nav" id="navTabs">
                 <a href="#" id="navPerformance" class="active">
                     <span class="nav-icon"><img src="Performance_Icon.png" alt=""></span>
@@ -588,6 +698,7 @@
             </nav>
             <div class="side-panel-footer">
                 <a href="/login" class="logout" id="logout">Log out</a>
+            </div>
             </div>
         </aside>
         <div class="main-content">
@@ -641,6 +752,7 @@
             </div>
         </div>
     </div>
+    <div class="hamburger-overlay" id="hamburgerOverlay" aria-hidden="true"></div>
     <div class="modal-overlay" id="userFormModal">
         <div class="modal-box">
             <h3 id="userFormTitle">Add user</h3>
