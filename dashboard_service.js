@@ -189,6 +189,7 @@
         var stationMgmt = document.getElementById('viewStationMgmt');
         var hostMgmt = document.getElementById('viewHostMgmt');
         var scansView = document.getElementById('viewScans');
+        var contentHeader = document.getElementById('contentHeader');
         var dateRange = document.getElementById('headerDateRange');
         var summaryBar = document.getElementById('summaryBar');
         var navPerf = document.getElementById('navPerformance');
@@ -199,6 +200,7 @@
         if (stationMgmt) stationMgmt.classList.toggle('visible', name === 'station-management');
         if (hostMgmt) hostMgmt.classList.toggle('visible', name === 'host-management');
         if (scansView) scansView.classList.toggle('visible', name === 'scans');
+        if (contentHeader) contentHeader.style.display = name === 'performance' ? 'flex' : 'none';
         if (dateRange) dateRange.style.display = name === 'performance' ? 'flex' : 'none';
         if (summaryBar) summaryBar.style.display = name === 'performance' ? 'flex' : 'none';
         if (navPerf) navPerf.classList.toggle('active', name === 'performance');
@@ -564,26 +566,35 @@
             redirectToLogin();
         });
 
-        if (isAdmin()) {
-            var nav = document.getElementById('navTabs');
-            if (nav) nav.style.display = 'flex';
-            document.getElementById('navPerformance').addEventListener('click', function (e) {
+        var adminLinks = document.querySelectorAll('[data-admin-only]');
+        adminLinks.forEach(function (el) {
+            el.style.display = isAdmin() ? '' : 'none';
+        });
+        if (!isAdmin()) {
+            document.body.classList.add('host-layout');
+            document.getElementById('headerLogout').style.display = 'block';
+            document.getElementById('headerLogout').addEventListener('click', function (e) {
+                e.preventDefault();
+                redirectToLogin();
+            });
+            showView('performance');
+        }
+        document.getElementById('navPerformance').addEventListener('click', function (e) {
                 e.preventDefault();
                 showView('performance');
             });
-            document.getElementById('navStationMgmt').addEventListener('click', function (e) {
-                e.preventDefault();
-                showView('station-management');
-            });
-            document.getElementById('navHostMgmt').addEventListener('click', function (e) {
-                e.preventDefault();
-                showView('host-management');
-            });
-            document.getElementById('navScans').addEventListener('click', function (e) {
-                e.preventDefault();
-                showView('scans');
-            });
-        }
+        document.getElementById('navStationMgmt').addEventListener('click', function (e) {
+            e.preventDefault();
+            showView('station-management');
+        });
+        document.getElementById('navHostMgmt').addEventListener('click', function (e) {
+            e.preventDefault();
+            showView('host-management');
+        });
+        document.getElementById('navScans').addEventListener('click', function (e) {
+            e.preventDefault();
+            showView('scans');
+        });
 
         document.getElementById('addUserBtn').addEventListener('click', openAddUserModal);
         document.getElementById('userFormCancel').addEventListener('click', closeUserFormModal);
