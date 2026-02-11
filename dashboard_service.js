@@ -23,19 +23,27 @@
     }
 
     function setDefaultDates() {
-        const end = new Date();
-        const start = new Date(end);
+        var startEl = document.getElementById('startDate');
+        var endEl = document.getElementById('endDate');
+        if (!startEl || !endEl) return;
+        var end = new Date();
+        var start = new Date(end);
         start.setDate(1);
-        document.getElementById('startDate').value = start.toISOString().slice(0, 10);
-        document.getElementById('endDate').value = end.toISOString().slice(0, 10);
+        startEl.value = start.toISOString().slice(0, 10);
+        endEl.value = end.toISOString().slice(0, 10);
     }
 
     function getSelectedRange() {
-        const startEl = document.getElementById('startDate');
-        const endEl = document.getElementById('endDate');
-        const start = new Date(startEl.value || startEl.min);
-        const end = new Date(endEl.value || endEl.max);
-        return { start, end };
+        var startEl = document.getElementById('startDate');
+        var endEl = document.getElementById('endDate');
+        var end = new Date();
+        var start = new Date(end);
+        start.setDate(1);
+        if (startEl && endEl) {
+            start = new Date(startEl.value || start.toISOString().slice(0, 10));
+            end = new Date(endEl.value || end.toISOString().slice(0, 10));
+        }
+        return { start: start, end: end };
     }
 
     async function api(path) {
@@ -52,6 +60,10 @@
     async function fetchRents(stationId, start, end) {
         const range = formatDateRange(start, end);
         return api('/api/rents/' + encodeURIComponent(stationId) + '/' + range);
+    }
+
+    async function fetchRentsMtd() {
+        return api('/api/rents/mtd');
     }
 
     function parseRentData(data) {
@@ -98,6 +110,9 @@
         document.getElementById('loading').style.display = 'block';
         document.getElementById('error').style.display = 'none';
         document.getElementById('stations').style.display = 'none';
+        var card = document.getElementById('mtdChartCard');
+        if (card) card.style.display = 'none';
+        if (window.Charts && window.Charts.destroyMtdChart) window.Charts.destroyMtdChart();
         var bar = document.getElementById('summaryBar');
         if (bar) bar.style.display = 'none';
     }
@@ -107,6 +122,9 @@
         document.getElementById('error').style.display = 'block';
         document.getElementById('error').textContent = msg;
         document.getElementById('stations').style.display = 'none';
+        var card = document.getElementById('mtdChartCard');
+        if (card) card.style.display = 'none';
+        if (window.Charts && window.Charts.destroyMtdChart) window.Charts.destroyMtdChart();
         var bar = document.getElementById('summaryBar');
         if (bar) bar.style.display = 'none';
     }
@@ -163,14 +181,25 @@
             var rate = takeHomeRate(user.type);
             var takeHome = Math.round(totalRevenue * rate * 100) / 100;
 
-            document.getElementById('summaryTotalRevenue').textContent = '$' + totalRevenue.toFixed(2);
-            document.getElementById('summaryTakeHome').textContent = '$' + takeHome.toFixed(2);
+            var revEl = document.getElementById('summaryTotalRevenue');
+            var takeEl = document.getElementById('summaryTakeHome');
+            if (revEl) revEl.textContent = '$' + totalRevenue.toFixed(2);
+            if (takeEl) takeEl.textContent = '$' + takeHome.toFixed(2);
 
             const container = document.getElementById('stations');
             container.innerHTML = '';
             results.forEach(function (r) {
                 container.appendChild(renderStationCard(r.stationData, r.rentData));
             });
+
+            try {
+                var mtdRes = await fetchRentsMtd();
+                if (window.Charts && window.Charts.renderMtdChart) window.Charts.renderMtdChart(mtdRes);
+            } catch (mtdErr) {
+                console.warn('MTD rent data failed to load', mtdErr);
+                var mtdCard = document.getElementById('mtdChartCard');
+                if (mtdCard) mtdCard.style.display = 'none';
+            }
 
             showStations();
         } catch (e) {
@@ -189,9 +218,6 @@
         var stationMgmt = document.getElementById('viewStationMgmt');
         var hostMgmt = document.getElementById('viewHostMgmt');
         var scansView = document.getElementById('viewScans');
-        var contentHeader = document.getElementById('contentHeader');
-        var dateRange = document.getElementById('headerDateRange');
-        var summaryBar = document.getElementById('summaryBar');
         var navPerf = document.getElementById('navPerformance');
         var navStationMgmt = document.getElementById('navStationMgmt');
         var navHostMgmt = document.getElementById('navHostMgmt');
@@ -200,9 +226,6 @@
         if (stationMgmt) stationMgmt.classList.toggle('visible', name === 'station-management');
         if (hostMgmt) hostMgmt.classList.toggle('visible', name === 'host-management');
         if (scansView) scansView.classList.toggle('visible', name === 'scans');
-        if (contentHeader) contentHeader.style.display = name === 'performance' ? 'flex' : 'none';
-        if (dateRange) dateRange.style.display = name === 'performance' ? 'flex' : 'none';
-        if (summaryBar) summaryBar.style.display = name === 'performance' ? 'flex' : 'none';
         if (navPerf) navPerf.classList.toggle('active', name === 'performance');
         if (navStationMgmt) navStationMgmt.classList.toggle('active', name === 'station-management');
         if (navHostMgmt) navHostMgmt.classList.toggle('active', name === 'host-management');
@@ -627,7 +650,8 @@
 
     function init() {
         setDefaultDates();
-        document.getElementById('applyDates').addEventListener('click', loadDashboard);
+        var applyBtn = document.getElementById('applyDates');
+        if (applyBtn) applyBtn.addEventListener('click', loadDashboard);
         var hamburgerBtn = document.getElementById('hamburgerBtn');
         var hamburgerMenu = document.getElementById('hamburgerMenu');
         var hamburgerOverlay = document.getElementById('hamburgerOverlay');
@@ -667,11 +691,14 @@
         });
         if (!isAdmin()) {
             document.body.classList.add('host-layout');
-            document.getElementById('headerLogout').style.display = 'block';
-            document.getElementById('headerLogout').addEventListener('click', function (e) {
-                e.preventDefault();
-                redirectToLogin();
-            });
+            var headerLogout = document.getElementById('headerLogout');
+            if (headerLogout) {
+                headerLogout.style.display = 'block';
+                headerLogout.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    redirectToLogin();
+                });
+            }
             showView('performance');
         }
         document.getElementById('navPerformance').addEventListener('click', function (e) {

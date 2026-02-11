@@ -180,19 +180,6 @@
             text-decoration: none;
         }
         .header-logout:hover { color: #e5e5e5; }
-        .content-header {
-            background: #000;
-            border: 1px solid #262626;
-            border-radius: 12px;
-            padding: 1rem 1.25rem;
-            margin: 1.5rem;
-            margin-bottom: 1rem;
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            justify-content: space-between;
-            gap: 1rem;
-        }
         .user-badge {
             font-size: 0.8rem;
             color: #737373;
@@ -328,6 +315,37 @@
             font-weight: 600;
         }
         .rent-empty { color: #525252; font-style: italic; }
+        .mtd-chart-card {
+            background: #000;
+            border: 1px solid #262626;
+            border-radius: 12px;
+            padding: 1.25rem;
+            margin-bottom: 1.5rem;
+        }
+        .mtd-chart-card .mtd-chart-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+        .mtd-chart-card .mtd-chart-amount {
+            font-size: 75px;
+            font-weight: 600;
+            line-height: 1.1;
+            margin-top: 0.25rem;
+        }
+        .mtd-chart-card .mtd-chart-description {
+            font-size: 0.9rem;
+            color: #a3a3a3;
+            margin-bottom: 1rem;
+        }
+        .mtd-chart-card .mtd-chart-canvas-wrap {
+            position: relative;
+            height: 240px;
+            width: 100%;
+        }
+        .mtd-chart-card .mtd-chart-canvas-wrap canvas {
+            max-height: 240px;
+        }
         .view-performance { display: block; }
         .view-performance.hidden { display: none; }
         .view-station-mgmt { display: none; }
@@ -645,13 +663,6 @@
                 border-top: 1px solid #262626;
                 margin-top: 0.5rem;
             }
-            .content-header {
-                margin: 1rem;
-                margin-bottom: 0.75rem;
-                padding: 0.75rem 1rem;
-                flex-direction: column;
-                align-items: stretch;
-            }
             .date-range {
                 width: 100%;
                 flex-wrap: wrap;
@@ -795,29 +806,17 @@
             </div>
         </aside>
         <div class="main-content">
-            <div class="content-header" id="contentHeader">
-                <div class="summary-bar" id="summaryBar" style="display: none;">
-                    <div class="summary-item">
-                        <span class="summary-label">Total Revenue</span>
-                        <span class="summary-value" id="summaryTotalRevenue">$0</span>
-                    </div>
-                    <div class="summary-item">
-                        <span class="summary-label">Take home</span>
-                        <span class="summary-value" id="summaryTakeHome">$0</span>
-                    </div>
-                </div>
-                <div class="date-range" id="headerDateRange">
-                    <input type="date" id="startDate" aria-label="Start date">
-                    <span class="date-range-arrow" aria-hidden="true">→</span>
-                    <input type="date" id="endDate" aria-label="End date">
-                    <button type="button" id="applyDates">Apply</button>
-                </div>
-                <a href="/login" id="headerLogout" class="header-logout" style="display: none;">Log out</a>
-            </div>
             <div class="main-scroll">
     <main class="view-performance" id="viewPerformance">
         <div class="loading" id="loading">Loading…</div>
         <div class="error" id="error" style="display: none;"></div>
+        <div class="mtd-chart-card" id="mtdChartCard" style="display: none;">
+            <div class="mtd-chart-title" id="mtdChartTitle"></div>
+            <div class="mtd-chart-description" id="mtdChartDescription"></div>
+            <div class="mtd-chart-canvas-wrap">
+                <canvas id="mtdChartCanvas" aria-label="Month to date rents chart"></canvas>
+            </div>
+        </div>
         <div class="stations" id="stations" style="display: none;"></div>
     </main>
     <main class="view-station-mgmt" id="viewStationMgmt">
@@ -916,6 +915,8 @@
             </div>
         </div>
     </div>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="charts.js"></script>
     <script src="dashboard_service.js"></script>
 </body>
 </html>

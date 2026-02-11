@@ -70,6 +70,7 @@ app.patch('/api/stations/:id', (req, res) => {
     proxyToCuub(`/stations/${req.params.id}`, res, { method: 'PATCH', body: JSON.stringify(req.body || {}) });
 });
 app.delete('/api/stations/:id', (req, res) => proxyToCuub(`/stations/${req.params.id}`, res, { method: 'DELETE' }));
+app.get('/api/rents/mtd', (req, res) => proxyToCuub('/rents/mtd', res));
 app.get('/api/rents/:stationId/:dateRange', (req, res) => {
     proxyToCuub(`/rents/${req.params.stationId}/${req.params.dateRange}`, res);
 });
