@@ -186,13 +186,6 @@
             text-decoration: none;
         }
         .header-logout:hover { color: #e5e5e5; }
-        .user-badge {
-            font-size: 0.8rem;
-            color: #737373;
-            background: #262626;
-            padding: 0.25rem 0.5rem;
-            border-radius: 6px;
-        }
         .date-range {
             display: flex;
             align-items: center;
@@ -634,10 +627,30 @@
             max-width: 420px;
             height: 200px;
         }
-        .scans-table { width: 100%; border-collapse: collapse; background: #000; border-radius: 12px; overflow: hidden; border: 1px solid #262626; }
-        .scans-table th, .scans-table td { padding: 0.75rem 1rem; text-align: left; border-bottom: 1px solid #262626; font-size: 0.9rem; }
+        .scans-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #000;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 2px solid #404040;
+        }
+        .scans-table tr {
+            background: #000;
+        }
+        .scans-table th,
+        .scans-table td {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            border-bottom: 1px solid #262626;
+        }
         .scans-table td { background: #000; }
-        .scans-table th { background: #262626; color: #a3a3a3; font-weight: 600; }
+        .scans-table th {
+            background: #000;
+            color: #e5e5e5;
+            font-size: 0.85rem;
+            font-weight: 700;
+        }
         .scans-table tr:last-child td { border-bottom: none; }
         .station-ids-list {
             display: flex;
@@ -875,6 +888,177 @@
             color: #FF6467;
         }
         .station-mgmt-table .btn-delete:hover { background: #4a2324; color: #ff7a7c; }
+        /* Hover card for station IDs */
+        .hover-card-trigger {
+            cursor: pointer;
+            text-decoration: underline;
+            text-decoration-color: rgba(229, 229, 229, 0.3);
+            text-underline-offset: 2px;
+            transition: text-decoration-color 0.2s;
+        }
+        .hover-card-trigger:hover {
+            text-decoration-color: rgba(229, 229, 229, 0.6);
+        }
+        .hover-card-content {
+            position: absolute;
+            z-index: 50;
+            min-width: 256px;
+            max-width: 320px;
+            padding: 0.75rem;
+            background: #000;
+            border: 1px solid #262626;
+            border-radius: 8px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transition: opacity 0.15s ease, visibility 0.15s ease;
+            bottom: 100%;
+            left: 0;
+            margin-bottom: 0.25rem;
+            max-height: calc(100vh - 2rem);
+            overflow-y: auto;
+        }
+        .hover-card-trigger:hover .hover-card-content,
+        .hover-card-trigger.hover-card-open .hover-card-content {
+            opacity: 1;
+            visibility: visible;
+        }
+        .hover-card-content .hover-card-title {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #e5e5e5;
+            margin-bottom: 0.5rem;
+        }
+        .hover-card-content .hover-card-description {
+            font-size: 0.8125rem;
+            color: #a3a3a3;
+            line-height: 1.5;
+        }
+        .hover-card-content .hover-card-stations {
+            margin-top: 0.5rem;
+            padding-top: 0.5rem;
+            border-top: 1px solid #262626;
+        }
+        .hover-card-content .hover-card-station-item {
+            font-size: 0.8125rem;
+            color: #e5e5e5;
+            padding: 0.25rem 0;
+        }
+        /* Drawer (replaces modal for Add user/station) */
+        .drawer-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 2000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.2s ease, visibility 0.2s ease;
+        }
+        .drawer-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        .drawer-content {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 2001;
+            background: #000;
+            border-top: 1px solid #262626;
+            border-radius: 0;
+            max-height: 96vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transform: translateY(100%);
+            transition: transform 0.3s ease;
+        }
+        .drawer-content > * {
+            width: 100%;
+            max-width: 500px;
+        }
+        .drawer-overlay.active .drawer-content {
+            transform: translateY(0);
+        }
+        .drawer-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid #262626;
+            position: relative;
+        }
+        .drawer-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: #e5e5e5;
+            margin-bottom: 0.25rem;
+        }
+        .drawer-description {
+            font-size: 0.875rem;
+            color: #a3a3a3;
+        }
+        .drawer-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1.5rem;
+        }
+        .drawer-footer {
+            padding: 1.5rem;
+            border-top: 1px solid #262626;
+            display: flex;
+            gap: 0.75rem;
+            justify-content: flex-end;
+        }
+        .drawer-footer button {
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            border-radius: 6px;
+        }
+        .drawer-footer .btn-cancel {
+            border: 1px solid #404040;
+            background: transparent;
+            color: #e5e5e5;
+        }
+        .drawer-footer .btn-cancel:hover {
+            background: #262626;
+            border-color: #525252;
+        }
+        .drawer-footer .btn-submit {
+            border: 1px solid #0099FF;
+            background: #0099FF;
+            color: white;
+        }
+        .drawer-footer .btn-submit:hover {
+            background: #008ae6;
+            border-color: #008ae6;
+        }
+        .drawer-close {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            width: 2rem;
+            height: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+            border: 1px solid transparent;
+            background: transparent;
+            color: #a3a3a3;
+            cursor: pointer;
+            transition: background 0.2s, color 0.2s;
+        }
+        .drawer-close:hover {
+            background: #262626;
+            color: #e5e5e5;
+        }
+        .drawer-close::before {
+            content: '×';
+            font-size: 1.5rem;
+            line-height: 1;
+        }
+        /* Modal (kept for delete confirmation) */
         .modal-overlay {
             position: fixed;
             inset: 0;
@@ -894,13 +1078,13 @@
             background: rgba(0,0,0,0.4);
         }
         .modal-box {
-            background: #1a1a1a;
-            border: 1px solid #262626;
+            background: transparent;
+            border: none;
             border-radius: 12px;
             padding: 1.5rem 1.75rem;
             max-width: 420px;
             width: 90%;
-            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+            box-shadow: none;
         }
         .modal-box h3 {
             margin-bottom: 1.25rem;
@@ -908,17 +1092,22 @@
             font-weight: 600;
             color: #e5e5e5;
         }
+        .drawer-form,
         .modal-form {
             display: flex;
             flex-direction: column;
             gap: 1.25rem;
         }
+        .drawer-body .field,
         .modal-box .field {
             display: flex;
             flex-direction: column;
             gap: 0.375rem;
         }
+        .drawer-body .field + .field,
         .modal-box .field + .field { margin-top: 0; }
+        .drawer-body .field-label,
+        .drawer-body label,
         .modal-box .field-label,
         .modal-box label {
             display: block;
@@ -927,16 +1116,20 @@
             color: #e5e5e5;
             margin-bottom: 0.25rem;
         }
+        .drawer-body .field-description,
         .modal-box .field-description {
             font-size: 0.8rem;
             color: #737373;
             margin-top: 0.25rem;
         }
+        .drawer-body .field-separator,
         .modal-box .field-separator {
             height: 1px;
             background: #262626;
             margin: 0.25rem 0;
         }
+        .drawer-body input,
+        .drawer-body select,
         .modal-box input,
         .modal-box select {
             width: 100%;
@@ -947,19 +1140,28 @@
             background: #262626;
             color: #e5e5e5;
         }
+        .drawer-body input,
         .modal-box input {
             margin-bottom: 0;
         }
+        .drawer-body select,
         .modal-box select { margin-bottom: 0; }
+        .drawer-body input:focus,
+        .drawer-body select:focus,
         .modal-box input:focus,
         .modal-box select:focus { outline: none; border-color: #0099FF; }
+        .drawer-body .field-group,
         .modal-box .field-group {
             display: flex;
             flex-direction: column;
             gap: 1rem;
         }
+        .drawer-body .field-group > label,
+        .drawer-body .field-group > .field,
         .modal-box .field-group > label,
         .modal-box .field-group > .field { margin-bottom: 0; }
+        .drawer-body #userFormAddFields,
+        .drawer-body #userFormEditFields,
         .modal-box #userFormAddFields,
         .modal-box #userFormEditFields {
             display: flex;
@@ -1142,6 +1344,29 @@
                 min-height: 44px;
                 padding: 0.6rem 0.75rem;
             }
+            .drawer-content {
+                max-height: 96vh;
+            }
+            .drawer-header {
+                padding: 1.25rem;
+            }
+            .drawer-body {
+                padding: 1.25rem;
+            }
+            .drawer-body input,
+            .drawer-body select {
+                min-height: 48px;
+                font-size: 16px;
+            }
+            .drawer-footer {
+                padding: 1.25rem;
+                gap: 0.5rem;
+            }
+            .drawer-footer button {
+                flex: 1;
+                min-height: 48px;
+                padding: 0.75rem 1rem;
+            }
             .modal-overlay {
                 padding: 1rem;
                 align-items: flex-end;
@@ -1180,7 +1405,6 @@
         <aside class="side-panel">
             <div class="side-panel-header">
                 <img src="CUUB_Logo.png" alt="CUUB" class="side-panel-logo">
-                <span class="user-badge" id="userBadge"></span>
                 <button type="button" class="hamburger-btn" id="hamburgerBtn" aria-label="Menu">
                     <span class="hamburger-line"></span>
                     <span class="hamburger-line"></span>
@@ -1194,6 +1418,10 @@
                     <span class="nav-icon"><img src="Performance_Icon.png" alt=""></span>
                     Performance
                 </a>
+                <a href="#" id="navScans" data-admin-only>
+                    <span class="nav-icon"><img src="Scan_Icon.png" alt=""></span>
+                    Scans
+                </a>
                 <a href="#" id="navStationMgmt" data-admin-only>
                     <span class="nav-icon"><img src="Stations_Icon.png" alt=""></span>
                     Stations
@@ -1201,10 +1429,6 @@
                 <a href="#" id="navHostMgmt" data-admin-only>
                     <span class="nav-icon"><img src="Partners_Icon.png" alt=""></span>
                     Partners
-                </a>
-                <a href="#" id="navScans" data-admin-only>
-                    <span class="nav-icon"><img src="Scan_Icon.png" alt=""></span>
-                    Scans
                 </a>
             </nav>
             <div class="side-panel-footer">
@@ -1293,8 +1517,8 @@
         <div id="stationMgmtList"></div>
     </main>
     <main class="view-host-mgmt" id="viewHostMgmt">
-        <div class="station-view-actions">
-            <button type="button" class="add-station-btn" id="addUserBtn">Add user</button>
+        <div class="stations-menubar">
+            <button type="button" class="stations-menubar-item" id="addUserBtn">Add user</button>
         </div>
         <div class="loading" id="hostMgmtLoading" style="display: none;">Loading…</div>
         <div class="skeleton-table-wrap" id="hostMgmtSkeletons">
@@ -1375,87 +1599,99 @@
         </div>
     </div>
     <div class="hamburger-overlay" id="hamburgerOverlay" aria-hidden="true"></div>
-    <div class="modal-overlay" id="userFormModal">
-        <div class="modal-box">
-            <h3 id="userFormTitle">Add user</h3>
-            <form id="userForm" class="modal-form">
-                <div class="field-group">
-                    <div class="field">
-                        <label for="userUsername" class="field-label">Username</label>
-                        <input type="text" id="userUsername" name="username" required placeholder="username">
-                    </div>
-                    <div id="userFormAddFields">
+    <div class="drawer-overlay" id="userFormDrawer">
+        <div class="drawer-content">
+            <button type="button" class="drawer-close" id="userFormClose" aria-label="Close"></button>
+            <div class="drawer-header">
+                <div class="drawer-title" id="userFormTitle">Add user</div>
+                <div class="drawer-description" id="userFormDescription">Create a new user account</div>
+            </div>
+            <div class="drawer-body">
+                <form id="userForm" class="drawer-form">
+                    <div class="field-group">
                         <div class="field">
-                            <label for="userType" class="field-label">Type</label>
-                            <select id="userType" name="type">
-                                <option value="HOST">HOST</option>
-                                <option value="DISTRIBUTER">DISTRIBUTER</option>
-                                <option value="ADMIN">ADMIN</option>
-                            </select>
+                            <label for="userUsername" class="field-label">Username</label>
+                            <input type="text" id="userUsername" name="username" required placeholder="username">
                         </div>
-                        <div class="field">
-                            <label for="userStationId" class="field-label">Station ID</label>
-                            <input type="text" id="userStationId" name="station_id" placeholder="e.g. CUBT062510000029">
-                            <span class="field-description">Optional for new users</span>
-                        </div>
-                    </div>
-                    <div id="userFormEditFields" style="display: none;">
-                        <div class="field">
-                            <label for="userTypeEdit" class="field-label">Type</label>
-                            <select id="userTypeEdit" name="type">
-                                <option value="HOST">HOST</option>
-                                <option value="DISTRIBUTER">DISTRIBUTER</option>
-                                <option value="DISTRIBUTOR">DISTRIBUTOR</option>
-                                <option value="ADMIN">ADMIN</option>
-                            </select>
-                        </div>
-                        <div class="field">
-                            <label class="field-label">Station IDs</label>
-                            <div id="userStationIdsList" class="station-ids-list"></div>
-                            <div class="station-ids-add">
-                                <select id="userAddStationSelect">
-                                    <option value="">— Add station —</option>
+                        <div id="userFormAddFields">
+                            <div class="field">
+                                <label for="userType" class="field-label">Type</label>
+                                <select id="userType" name="type">
+                                    <option value="HOST">HOST</option>
+                                    <option value="DISTRIBUTER">DISTRIBUTER</option>
+                                    <option value="ADMIN">ADMIN</option>
                                 </select>
-                                <button type="button" id="userAddStationBtn">Add</button>
+                            </div>
+                            <div class="field">
+                                <label for="userStationId" class="field-label">Station ID</label>
+                                <input type="text" id="userStationId" name="station_id" placeholder="e.g. CUBT062510000029">
+                                <span class="field-description">Optional for new users</span>
+                            </div>
+                        </div>
+                        <div id="userFormEditFields" style="display: none;">
+                            <div class="field">
+                                <label for="userTypeEdit" class="field-label">Type</label>
+                                <select id="userTypeEdit" name="type">
+                                    <option value="HOST">HOST</option>
+                                    <option value="DISTRIBUTER">DISTRIBUTER</option>
+                                    <option value="DISTRIBUTOR">DISTRIBUTOR</option>
+                                    <option value="ADMIN">ADMIN</option>
+                                </select>
+                            </div>
+                            <div class="field">
+                                <label class="field-label">Station IDs</label>
+                                <div id="userStationIdsList" class="station-ids-list"></div>
+                                <div class="station-ids-add">
+                                    <select id="userAddStationSelect">
+                                        <option value="">— Add station —</option>
+                                    </select>
+                                    <button type="button" id="userAddStationBtn">Add</button>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-                <div class="modal-actions">
-                    <button type="button" class="btn-cancel" id="userFormCancel">Cancel</button>
-                    <button type="submit" class="btn-submit" id="userFormSubmit">Save</button>
-                </div>
-            </form>
+                </form>
+            </div>
+            <div class="drawer-footer">
+                <button type="button" class="btn-cancel" id="userFormCancel">Cancel</button>
+                <button type="submit" class="btn-submit" id="userFormSubmit" form="userForm">Save</button>
+            </div>
         </div>
     </div>
-    <div class="modal-overlay" id="stationFormModal">
-        <div class="modal-box">
-            <h3 id="stationFormTitle">Add station</h3>
-            <form id="stationForm" class="modal-form">
-                <div class="field-group">
-                    <div class="field">
-                        <label for="stationId" class="field-label">ID</label>
-                        <input type="text" id="stationId" name="id" required placeholder="e.g. CUBT062510000003">
-                        <span class="field-description">Unique station identifier</span>
+    <div class="drawer-overlay" id="stationFormDrawer">
+        <div class="drawer-content">
+            <button type="button" class="drawer-close" id="stationFormClose" aria-label="Close"></button>
+            <div class="drawer-header">
+                <div class="drawer-title" id="stationFormTitle">Add station</div>
+                <div class="drawer-description" id="stationFormDescription">Create a new station</div>
+            </div>
+            <div class="drawer-body">
+                <form id="stationForm" class="drawer-form">
+                    <div class="field-group">
+                        <div class="field">
+                            <label for="stationId" class="field-label">ID</label>
+                            <input type="text" id="stationId" name="id" required placeholder="e.g. CUBT062510000003">
+                            <span class="field-description">Unique station identifier</span>
+                        </div>
+                        <div class="field">
+                            <label for="stationTitle" class="field-label">Title</label>
+                            <input type="text" id="stationTitle" name="title" required placeholder="Station name">
+                        </div>
+                        <div class="field">
+                            <label for="stationLat" class="field-label">Latitude</label>
+                            <input type="number" id="stationLat" name="latitude" step="any" required placeholder="41.94960">
+                        </div>
+                        <div class="field">
+                            <label for="stationLng" class="field-label">Longitude</label>
+                            <input type="number" id="stationLng" name="longitude" step="any" required placeholder="-87.65861">
+                        </div>
                     </div>
-                    <div class="field">
-                        <label for="stationTitle" class="field-label">Title</label>
-                        <input type="text" id="stationTitle" name="title" required placeholder="Station name">
-                    </div>
-                    <div class="field">
-                        <label for="stationLat" class="field-label">Latitude</label>
-                        <input type="number" id="stationLat" name="latitude" step="any" required placeholder="41.94960">
-                    </div>
-                    <div class="field">
-                        <label for="stationLng" class="field-label">Longitude</label>
-                        <input type="number" id="stationLng" name="longitude" step="any" required placeholder="-87.65861">
-                    </div>
-                </div>
-                <div class="modal-actions">
-                    <button type="button" class="btn-cancel" id="stationFormCancel">Cancel</button>
-                    <button type="submit" class="btn-submit" id="stationFormSubmit">Save</button>
-                </div>
-            </form>
+                </form>
+            </div>
+            <div class="drawer-footer">
+                <button type="button" class="btn-cancel" id="stationFormCancel">Cancel</button>
+                <button type="submit" class="btn-submit" id="stationFormSubmit" form="stationForm">Save</button>
+            </div>
         </div>
     </div>
     <div class="modal-overlay" id="deleteConfirmModal">

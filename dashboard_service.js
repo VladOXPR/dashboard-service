@@ -164,9 +164,6 @@
             return;
         }
 
-        const badge = document.getElementById('userBadge');
-        badge.textContent = (user.username || 'User') + ' · ' + (user.type || 'USER');
-
         showLoading();
 
         try {
@@ -268,7 +265,7 @@
         typeCounts.sort(function (a, b) { return b.count - a.count; });
 
         destroyScansSummaryChart();
-        el.innerHTML = '<div class="scans-summary-total"><span class="label">Total Scans</span><span class="value">' + total + '</span></div><div class="scans-summary-chart-wrap"><canvas id="scansSummaryChart" aria-label="Scans by type"></canvas></div>';
+        el.innerHTML = '<div class="scans-summary-total"><span class="label">Total Scans</span><span class="value">' + total + '</span></div><div class="scans-summary-chart-wrap"><canvas id="scansSummaryChart" aria-label="Scans by type"></canvas><div id="scansSummaryChartTooltip" class="chart-tooltip-custom" aria-hidden="true"></div></div>';
         el.style.display = 'flex';
 
         var canvas = document.getElementById('scansSummaryChart');
@@ -306,8 +303,49 @@
                 plugins: {
                     legend: { display: false },
                     tooltip: {
-                        callbacks: {
-                            label: function (ctx) { return ctx.parsed.y + ' scans'; }
+                        enabled: false,
+                        external: function (context) {
+                            var el = document.getElementById('scansSummaryChartTooltip');
+                            if (!el) return;
+                            var tp = context.tooltip;
+                            if (tp.opacity === 0) {
+                                el.classList.remove('visible');
+                                el.setAttribute('aria-hidden', 'true');
+                                return;
+                            }
+                            var i = tp.dataPoints && tp.dataPoints[0] ? tp.dataPoints[0].dataIndex : 0;
+                            var type = labels[i] || 'Unknown';
+                            var count = counts[i] || 0;
+                            el.innerHTML =
+                                '<div class="chart-tooltip-header">' +
+                                '<span>' + type + '</span>' +
+                                '</div>' +
+                                '<div class="chart-tooltip-divider"></div>' +
+                                '<div class="chart-tooltip-body">' +
+                                '<div class="chart-tooltip-row">' +
+                                '<span class="chart-tooltip-value">' + count + ' scans</span>' +
+                                '</div>' +
+                                '</div>';
+                            el.classList.add('visible');
+                            el.setAttribute('aria-hidden', 'false');
+                            var wrap = el.parentElement;
+                            var canvasEl = context.chart.canvas;
+                            if (wrap && canvasEl) {
+                                var rect = canvasEl.getBoundingClientRect();
+                                var wrapRect = wrap.getBoundingClientRect();
+                                var caretX = tp.caretX != null ? tp.caretX : tp.x;
+                                var caretY = tp.caretY != null ? tp.caretY : tp.y;
+                                var left = rect.left - wrapRect.left + caretX;
+                                var top = rect.top - wrapRect.top + caretY;
+                                var w = el.offsetWidth || 180;
+                                var h = el.offsetHeight || 80;
+                                var meta = context.chart.getDatasetMeta(0);
+                                var bar = meta && meta.data[i];
+                                var barCenterY = bar ? (bar.y + bar.base) / 2 : caretY;
+                                var topPos = rect.top - wrapRect.top + barCenterY;
+                                el.style.left = Math.max(8, Math.min(left - w / 2, wrap.offsetWidth - w - 8)) + 'px';
+                                el.style.top = (topPos - h / 2) + 'px';
+                            }
                         }
                     }
                 },
@@ -322,7 +360,7 @@
                     },
                     y: {
                         beginAtZero: true,
-                        grid: { color: '#262626' },
+                        grid: { display: false },
                         ticks: { color: '#737373' }
                     }
                 }
@@ -511,11 +549,29 @@
             var type = escapeHtml(String(u.type || ''));
             var created = escapeHtml(String(u.created_at || ''));
             var updated = escapeHtml(String(u.updated_at || ''));
-            var stations = Array.isArray(u.stations) ? u.stations.join(', ') : '';
-            var stationsJson = JSON.stringify(Array.isArray(u.stations) ? u.stations : []);
+            var stationList = Array.isArray(u.stations) ? u.stations : [];
+            var stationsJson = JSON.stringify(stationList);
+            var stationsHtml = '';
+            if (stationList.length === 0) {
+                stationsHtml = '—';
+            } else if (stationList.length === 1) {
+                stationsHtml = escapeHtml(stationList[0]);
+            } else {
+                var stationItemsHtml = stationList.map(function (sid) {
+                    return '<div class="hover-card-station-item">' + escapeHtml(sid) + '</div>';
+                }).join('');
+                stationsHtml = '<span class="hover-card-trigger" style="position: relative; display: inline-block;">' +
+                    stationList.length + ' stations' +
+                    '<div class="hover-card-content">' +
+                    '<div class="hover-card-title">Stations</div>' +
+                    '<div class="hover-card-description">This user has access to ' + stationList.length + ' station' + (stationList.length !== 1 ? 's' : '') + ':</div>' +
+                    '<div class="hover-card-stations">' + stationItemsHtml + '</div>' +
+                    '</div>' +
+                    '</span>';
+            }
             html += '<tr data-user-id="' + id + '" data-user-username="' + escapeHtml(username) + '" data-user-type="' + escapeHtml(type) + '" data-user-stations="' + escapeHtml(stationsJson) + '">' +
-                '<td>' + id + '</td><td>' + username + '</td><td>' + type + '</td><td>' + created + '</td><td>' + updated + '</td><td>' + escapeHtml(stations) + '</td>' +
-                '<td><div class="table-actions"><button type="button" class="btn-edit">Edit</button><button type="button" class="btn-delete">Delete</button></div></td></tr>';
+                '<td>' + id + '</td><td>' + username + '</td><td>' + type + '</td><td>' + created + '</td><td>' + updated + '</td><td>' + stationsHtml + '</td>' +
+                '<td><div class="table-actions"><button type="button" class="btn-edit">Edit</button><button type="button" class="btn-delete btn-destructive">Delete</button></div></td></tr>';
         });
         html += '</tbody></table>';
         container.innerHTML = html;
@@ -533,13 +589,37 @@
                 if (uid) openDeleteConfirmModal('user', uid, row);
             });
         });
+        container.querySelectorAll('.hover-card-trigger').forEach(function (trigger) {
+            var content = trigger.querySelector('.hover-card-content');
+            if (!content) return;
+            trigger.addEventListener('mouseenter', function () {
+                var rect = trigger.getBoundingClientRect();
+                var contentRect = content.getBoundingClientRect();
+                var viewportHeight = window.innerHeight;
+                var spaceAbove = rect.top;
+                var spaceBelow = viewportHeight - rect.bottom;
+                var contentHeight = contentRect.height || 200;
+                if (spaceAbove < contentHeight + 20 && spaceBelow > spaceAbove) {
+                    content.style.bottom = 'auto';
+                    content.style.top = '100%';
+                    content.style.marginTop = '0.25rem';
+                    content.style.marginBottom = '0';
+                } else {
+                    content.style.top = 'auto';
+                    content.style.bottom = '100%';
+                    content.style.marginBottom = '0.25rem';
+                    content.style.marginTop = '0';
+                }
+            });
+        });
     }
 
     function openAddStationModal() {
         document.getElementById('stationFormTitle').textContent = 'Add station';
+        document.getElementById('stationFormDescription').textContent = 'Create a new station';
         document.getElementById('stationForm').reset();
         document.getElementById('stationId').disabled = false;
-        document.getElementById('stationFormModal').classList.add('active');
+        document.getElementById('stationFormDrawer').classList.add('active');
     }
 
     function openEditStationModal(stationId, row) {
@@ -553,18 +633,19 @@
             lng = (cells[3] && cells[3].textContent) || '';
         }
         document.getElementById('stationFormTitle').textContent = 'Edit station';
+        document.getElementById('stationFormDescription').textContent = 'Update station information';
         document.getElementById('stationId').value = stationId;
         document.getElementById('stationId').disabled = true;
         document.getElementById('stationTitle').value = title || '';
         document.getElementById('stationLat').value = lat || '';
         document.getElementById('stationLng').value = lng || '';
-        document.getElementById('stationFormModal').setAttribute('data-edit-id', stationId);
-        document.getElementById('stationFormModal').classList.add('active');
+        document.getElementById('stationFormDrawer').setAttribute('data-edit-id', stationId);
+        document.getElementById('stationFormDrawer').classList.add('active');
     }
 
     function closeStationFormModal() {
-        document.getElementById('stationFormModal').classList.remove('active');
-        document.getElementById('stationFormModal').removeAttribute('data-edit-id');
+        document.getElementById('stationFormDrawer').classList.remove('active');
+        document.getElementById('stationFormDrawer').removeAttribute('data-edit-id');
         document.getElementById('stationId').disabled = false;
     }
 
@@ -589,11 +670,12 @@
 
     function openAddUserModal() {
         document.getElementById('userFormTitle').textContent = 'Add user';
+        document.getElementById('userFormDescription').textContent = 'Create a new user account';
         document.getElementById('userForm').reset();
         document.getElementById('userFormAddFields').style.display = 'flex';
         document.getElementById('userFormEditFields').style.display = 'none';
-        document.getElementById('userFormModal').removeAttribute('data-edit-id');
-        document.getElementById('userFormModal').classList.add('active');
+        document.getElementById('userFormDrawer').removeAttribute('data-edit-id');
+        document.getElementById('userFormDrawer').classList.add('active');
     }
 
     function renderUserStationChips(container, stationIds, onRemove) {
@@ -620,8 +702,8 @@
         document.getElementById('userTypeEdit').value = type || 'HOST';
         document.getElementById('userFormAddFields').style.display = 'none';
         document.getElementById('userFormEditFields').style.display = 'flex';
-        document.getElementById('userFormModal').setAttribute('data-edit-id', userId);
-        document.getElementById('userFormModal').classList.add('active');
+        document.getElementById('userFormDrawer').setAttribute('data-edit-id', userId);
+        document.getElementById('userFormDrawer').classList.add('active');
         var listEl = document.getElementById('userStationIdsList');
         var addSelect = document.getElementById('userAddStationSelect');
         addSelect.innerHTML = '<option value="">— Add station —</option>';
@@ -662,13 +744,13 @@
                 refreshAddSelect();
             }
         };
-        document.getElementById('userFormModal')._editStationIds = function () { return currentIds; };
+        document.getElementById('userFormDrawer')._editStationIds = function () { return currentIds; };
     }
 
     function closeUserFormModal() {
-        document.getElementById('userFormModal').classList.remove('active');
-        document.getElementById('userFormModal').removeAttribute('data-edit-id');
-        document.getElementById('userFormModal')._editStationIds = null;
+        document.getElementById('userFormDrawer').classList.remove('active');
+        document.getElementById('userFormDrawer').removeAttribute('data-edit-id');
+        document.getElementById('userFormDrawer')._editStationIds = null;
         document.getElementById('userFormAddFields').style.display = 'flex';
         document.getElementById('userFormEditFields').style.display = 'none';
     }
@@ -797,9 +879,10 @@
 
         document.getElementById('addUserBtn').addEventListener('click', openAddUserModal);
         document.getElementById('userFormCancel').addEventListener('click', closeUserFormModal);
+        document.getElementById('userFormClose').addEventListener('click', closeUserFormModal);
         document.getElementById('userForm').addEventListener('submit', async function (e) {
             e.preventDefault();
-            var modal = document.getElementById('userFormModal');
+            var modal = document.getElementById('userFormDrawer');
             var editId = modal.getAttribute('data-edit-id');
             var username = document.getElementById('userUsername').value.trim();
             var submitBtn = document.getElementById('userFormSubmit');
@@ -824,15 +907,16 @@
                 submitBtn.disabled = false;
             }
         });
-        document.getElementById('userFormModal').addEventListener('click', function (e) {
+        document.getElementById('userFormDrawer').addEventListener('click', function (e) {
             if (e.target === this) closeUserFormModal();
         });
 
         document.getElementById('addStationBtn').addEventListener('click', openAddStationModal);
         document.getElementById('stationFormCancel').addEventListener('click', closeStationFormModal);
+        document.getElementById('stationFormClose').addEventListener('click', closeStationFormModal);
         document.getElementById('stationForm').addEventListener('submit', async function (e) {
             e.preventDefault();
-            var editId = document.getElementById('stationFormModal').getAttribute('data-edit-id');
+            var editId = document.getElementById('stationFormDrawer').getAttribute('data-edit-id');
             var id = document.getElementById('stationId').value.trim();
             var title = document.getElementById('stationTitle').value.trim();
             var lat = parseFloat(document.getElementById('stationLat').value, 10);
@@ -880,7 +964,7 @@
             }
         });
 
-        document.getElementById('stationFormModal').addEventListener('click', function (e) {
+        document.getElementById('stationFormDrawer').addEventListener('click', function (e) {
             if (e.target === this) closeStationFormModal();
         });
         document.getElementById('deleteConfirmModal').addEventListener('click', function (e) {
