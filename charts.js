@@ -74,8 +74,32 @@
 
         var grey = '#737373';
 
+        var verticalLinePlugin = {
+            id: 'mtdVerticalLine',
+            afterDraw: function (chart) {
+                var active = chart.tooltip._active || chart.tooltip.active || (chart.tooltip.dataPoints && chart.tooltip.dataPoints.map(function (p) { return { element: p.element }; }));
+                if (active && active.length && active[0].element) {
+                    var ctx = chart.ctx;
+                    var x = active[0].element.x;
+                    var yScale = chart.scales.y;
+                    var top = yScale ? yScale.top : chart.chartArea.top;
+                    var bottom = yScale ? yScale.bottom : chart.chartArea.bottom;
+                    ctx.save();
+                    ctx.setLineDash([6, 4]);
+                    ctx.strokeStyle = 'rgba(115, 115, 115, 0.8)';
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    ctx.moveTo(x, top);
+                    ctx.lineTo(x, bottom);
+                    ctx.stroke();
+                    ctx.restore();
+                }
+            }
+        };
+
         mtdChartInstance = new window.Chart(canvas, {
             type: 'line',
+            plugins: [verticalLinePlugin],
             data: {
                 labels: labels,
                 datasets: [
@@ -110,9 +134,16 @@
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false
+                },
                 plugins: {
                     legend: { display: false },
                     tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                        events: ['mousemove', 'mouseout'],
                         callbacks: {
                             afterLabel: function (context) {
                                 var i = context.dataIndex;
