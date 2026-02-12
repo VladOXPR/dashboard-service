@@ -234,11 +234,28 @@
         return parts.join(' ');
     }
 
+    var scansSummaryChartInstance = null;
+
+    function destroyScansSummaryChart() {
+        if (scansSummaryChartInstance) {
+            scansSummaryChartInstance.destroy();
+            scansSummaryChartInstance = null;
+        }
+    }
+
+    var SCANS_BAR_GRADIENTS = [
+        ['#FDDA7B', '#EB641D'],
+        ['#23B3FA', '#1F65E0'],
+        ['#DEA1EC', '#9118A7'],
+        ['#FFD45B', '#D68909']
+    ];
+
     function renderScansSummary(scans) {
         var el = document.getElementById('scansSummary');
         if (!el) return;
         if (!Array.isArray(scans) || scans.length === 0) {
             el.style.display = 'none';
+            destroyScansSummaryChart();
             return;
         }
         var total = scans.length;
@@ -249,12 +266,68 @@
         });
         var typeCounts = Object.keys(byType).map(function (t) { return { type: t, count: byType[t] }; });
         typeCounts.sort(function (a, b) { return b.count - a.count; });
-        var top4 = typeCounts.slice(0, 4);
-        var typesHtml = top4.map(function (x) {
-            return '<div class="scans-summary-type"><span class="label">' + escapeHtml(x.type) + '</span><span class="value">' + x.count + '</span></div>';
-        }).join('');
-        el.innerHTML = '<div class="scans-summary-total"><span class="label">Total Scans</span><span class="value">' + total + '</span></div><div class="scans-summary-types">' + typesHtml + '</div>';
+
+        destroyScansSummaryChart();
+        el.innerHTML = '<div class="scans-summary-total"><span class="label">Total Scans</span><span class="value">' + total + '</span></div><div class="scans-summary-chart-wrap"><canvas id="scansSummaryChart" aria-label="Scans by type"></canvas></div>';
         el.style.display = 'flex';
+
+        var canvas = document.getElementById('scansSummaryChart');
+        if (!canvas || typeCounts.length === 0) return;
+
+        var labels = typeCounts.map(function (x) { return x.type; });
+        var counts = typeCounts.map(function (x) { return x.count; });
+
+        scansSummaryChartInstance = new window.Chart(canvas, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Scans',
+                    data: counts,
+                    backgroundColor: function (context) {
+                        var chart = context.chart;
+                        var ctx = chart.ctx;
+                        var chartArea = chart.chartArea;
+                        if (!chartArea) return '#262626';
+                        var i = context.dataIndex;
+                        var c = SCANS_BAR_GRADIENTS[i % SCANS_BAR_GRADIENTS.length];
+                        var g = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
+                        g.addColorStop(0, c[0]);
+                        g.addColorStop(1, c[1]);
+                        return g;
+                    },
+                    borderRadius: 8,
+                    borderSkipped: false
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function (ctx) { return ctx.parsed.y + ' scans'; }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { display: false },
+                        ticks: {
+                            color: '#737373',
+                            maxRotation: 45,
+                            maxTicksLimit: 10
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: '#262626' },
+                        ticks: { color: '#737373' }
+                    }
+                }
+            }
+        });
     }
 
     function renderScansList(scans) {
@@ -287,7 +360,11 @@
         if (!container) return;
         if (summary) summary.style.display = 'none';
         container.innerHTML = '';
-        loading.style.display = 'block';
+        loading.style.display = 'none';
+        var summarySkeleton = document.getElementById('scansSummarySkeleton');
+        if (summarySkeleton) summarySkeleton.style.display = 'flex';
+        var skeletons = document.getElementById('scansSkeletons');
+        if (skeletons) skeletons.style.display = 'block';
         errEl.style.display = 'none';
         try {
             var json = await fetchScans();
@@ -303,6 +380,8 @@
             errEl.style.color = '#fca5a5';
         } finally {
             loading.style.display = 'none';
+            if (summarySkeleton) summarySkeleton.style.display = 'none';
+            if (skeletons) skeletons.style.display = 'none';
         }
     }
 
@@ -368,8 +447,10 @@
         var container = document.getElementById('stationMgmtList');
         var loading = document.getElementById('mgmtLoading');
         var errEl = document.getElementById('mgmtError');
+        var skeletons = document.getElementById('stationMgmtSkeletons');
         if (!container) return;
         loading.style.display = 'none';
+        if (skeletons) skeletons.style.display = 'none';
         errEl.style.display = 'none';
         if (!Array.isArray(stations) || stations.length === 0) {
             container.innerHTML = '<p style="color: #a3a3a3;">No stations found.</p>';
@@ -411,8 +492,10 @@
         var container = document.getElementById('hostMgmtList');
         var loading = document.getElementById('hostMgmtLoading');
         var errEl = document.getElementById('hostMgmtError');
+        var skeletons = document.getElementById('hostMgmtSkeletons');
         if (!container) return;
         loading.style.display = 'none';
+        if (skeletons) skeletons.style.display = 'none';
         errEl.style.display = 'none';
         var list = Array.isArray(users) ? users : [];
         if (list.length === 0) {
@@ -587,7 +670,9 @@
         var errEl = document.getElementById('mgmtError');
         if (!container) return;
         container.innerHTML = '';
-        loading.style.display = 'block';
+        loading.style.display = 'none';
+        var skeletons = document.getElementById('stationMgmtSkeletons');
+        if (skeletons) skeletons.style.display = 'block';
         errEl.style.display = 'none';
         try {
             var json = await fetchAllStations();
@@ -596,6 +681,7 @@
         } catch (e) {
             console.error(e);
             loading.style.display = 'none';
+            if (skeletons) skeletons.style.display = 'none';
             errEl.style.display = 'block';
             errEl.textContent = 'Failed to load stations. Please try again.';
             errEl.style.color = '#fca5a5';
@@ -608,7 +694,9 @@
         var errEl = document.getElementById('hostMgmtError');
         if (!container) return;
         container.innerHTML = '';
-        loading.style.display = 'block';
+        loading.style.display = 'none';
+        var skeletons = document.getElementById('hostMgmtSkeletons');
+        if (skeletons) skeletons.style.display = 'block';
         errEl.style.display = 'none';
         try {
             var json = await fetchAllUsers();
@@ -617,6 +705,7 @@
         } catch (e) {
             console.error(e);
             loading.style.display = 'none';
+            if (skeletons) skeletons.style.display = 'none';
             errEl.style.display = 'block';
             errEl.textContent = 'Failed to load users. Please try again.';
             errEl.style.color = '#fca5a5';

@@ -313,6 +313,40 @@
             flex: 1;
             margin-bottom: 0;
         }
+        .skeleton-table-wrap {
+            display: none;
+            width: 100%;
+            background: #000;
+            border: 1px solid #262626;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        .skeleton-table {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            padding: 1rem;
+            width: 100%;
+        }
+        .skeleton-table-row {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+        .skeleton-table-row .skeleton-cell {
+            height: 1rem;
+        }
+        .skeleton-table-row .skeleton-cell-flex {
+            flex: 1;
+        }
+        .skeleton-table-row .skeleton-cell-w24 {
+            width: 6rem;
+            flex-shrink: 0;
+        }
+        .skeleton-table-row .skeleton-cell-w20 {
+            width: 5rem;
+            flex-shrink: 0;
+        }
         .stations {
             display: grid;
             gap: 1rem;
@@ -478,25 +512,44 @@
             font-weight: 600;
             color: #e5e5e5;
         }
-        .scans-summary-types {
-            display: flex;
-            flex-direction: row;
+        .scans-summary-chart-wrap {
+            position: relative;
+            width: 100%;
+            max-width: 420px;
+            height: 200px;
+        }
+        .scans-summary-chart-wrap canvas {
+            max-height: 200px;
+        }
+        .scans-summary-skeleton {
+            display: none;
+            background: #000;
+            border: 1px solid #262626;
+            border-radius: 12px;
+            padding: 1.5rem 1.5rem;
+            margin-bottom: 1.25rem;
+            align-items: center;
+            justify-content: space-between;
             gap: 2rem;
             flex-wrap: wrap;
         }
-        .scans-summary-type {
+        .scans-summary-skeleton .skeleton-total-wrap {
             display: flex;
             flex-direction: column;
             gap: 0.25rem;
         }
-        .scans-summary-type .label {
-            font-size: 15px;
-            color: #a3a3a3;
+        .scans-summary-skeleton .skeleton-total-label {
+            height: 15px;
+            width: 6rem;
         }
-        .scans-summary-type .value {
-            font-size: 35px;
-            font-weight: 600;
-            color: #e5e5e5;
+        .scans-summary-skeleton .skeleton-total-value {
+            height: 82.5px;
+            width: 8rem;
+        }
+        .scans-summary-skeleton .skeleton-chart-wrap {
+            width: 100%;
+            max-width: 420px;
+            height: 200px;
         }
         .scans-table { width: 100%; border-collapse: collapse; background: #000; border-radius: 12px; overflow: hidden; border: 1px solid #262626; }
         .scans-table th, .scans-table td { padding: 0.75rem 1rem; text-align: left; border-bottom: 1px solid #262626; font-size: 0.9rem; }
@@ -950,6 +1003,35 @@
             <a href="https://map.cuub.tech" class="see-map-btn" target="_blank" rel="noopener">See map</a>
         </div>
         <div class="loading" id="mgmtLoading" style="display: none;">Loading…</div>
+        <div class="skeleton-table-wrap" id="stationMgmtSkeletons">
+            <div class="skeleton-table">
+                <div class="skeleton-table-row" aria-hidden="true">
+                    <div class="skeleton skeleton-cell skeleton-cell-flex"></div>
+                    <div class="skeleton skeleton-cell skeleton-cell-w24"></div>
+                    <div class="skeleton skeleton-cell skeleton-cell-w20"></div>
+                </div>
+                <div class="skeleton-table-row" aria-hidden="true">
+                    <div class="skeleton skeleton-cell skeleton-cell-flex"></div>
+                    <div class="skeleton skeleton-cell skeleton-cell-w24"></div>
+                    <div class="skeleton skeleton-cell skeleton-cell-w20"></div>
+                </div>
+                <div class="skeleton-table-row" aria-hidden="true">
+                    <div class="skeleton skeleton-cell skeleton-cell-flex"></div>
+                    <div class="skeleton skeleton-cell skeleton-cell-w24"></div>
+                    <div class="skeleton skeleton-cell skeleton-cell-w20"></div>
+                </div>
+                <div class="skeleton-table-row" aria-hidden="true">
+                    <div class="skeleton skeleton-cell skeleton-cell-flex"></div>
+                    <div class="skeleton skeleton-cell skeleton-cell-w24"></div>
+                    <div class="skeleton skeleton-cell skeleton-cell-w20"></div>
+                </div>
+                <div class="skeleton-table-row" aria-hidden="true">
+                    <div class="skeleton skeleton-cell skeleton-cell-flex"></div>
+                    <div class="skeleton skeleton-cell skeleton-cell-w24"></div>
+                    <div class="skeleton skeleton-cell skeleton-cell-w20"></div>
+                </div>
+            </div>
+        </div>
         <div class="error" id="mgmtError" style="display: none;"></div>
         <div id="stationMgmtList"></div>
     </main>
@@ -958,12 +1040,77 @@
             <button type="button" class="add-station-btn" id="addUserBtn">Add user</button>
         </div>
         <div class="loading" id="hostMgmtLoading" style="display: none;">Loading…</div>
+        <div class="skeleton-table-wrap" id="hostMgmtSkeletons">
+            <div class="skeleton-table">
+                <div class="skeleton-table-row" aria-hidden="true">
+                    <div class="skeleton skeleton-cell skeleton-cell-flex"></div>
+                    <div class="skeleton skeleton-cell skeleton-cell-w24"></div>
+                    <div class="skeleton skeleton-cell skeleton-cell-w20"></div>
+                </div>
+                <div class="skeleton-table-row" aria-hidden="true">
+                    <div class="skeleton skeleton-cell skeleton-cell-flex"></div>
+                    <div class="skeleton skeleton-cell skeleton-cell-w24"></div>
+                    <div class="skeleton skeleton-cell skeleton-cell-w20"></div>
+                </div>
+                <div class="skeleton-table-row" aria-hidden="true">
+                    <div class="skeleton skeleton-cell skeleton-cell-flex"></div>
+                    <div class="skeleton skeleton-cell skeleton-cell-w24"></div>
+                    <div class="skeleton skeleton-cell skeleton-cell-w20"></div>
+                </div>
+                <div class="skeleton-table-row" aria-hidden="true">
+                    <div class="skeleton skeleton-cell skeleton-cell-flex"></div>
+                    <div class="skeleton skeleton-cell skeleton-cell-w24"></div>
+                    <div class="skeleton skeleton-cell skeleton-cell-w20"></div>
+                </div>
+                <div class="skeleton-table-row" aria-hidden="true">
+                    <div class="skeleton skeleton-cell skeleton-cell-flex"></div>
+                    <div class="skeleton skeleton-cell skeleton-cell-w24"></div>
+                    <div class="skeleton skeleton-cell skeleton-cell-w20"></div>
+                </div>
+            </div>
+        </div>
         <div class="error" id="hostMgmtError" style="display: none;"></div>
         <div id="hostMgmtList"></div>
     </main>
     <main class="view-scans" id="viewScans">
         <div class="scans-summary" id="scansSummary" style="display: none;"></div>
+        <div class="scans-summary-skeleton" id="scansSummarySkeleton">
+            <div class="skeleton-total-wrap">
+                <div class="skeleton skeleton-total-label" aria-hidden="true"></div>
+                <div class="skeleton skeleton-total-value" aria-hidden="true"></div>
+            </div>
+            <div class="skeleton skeleton-chart-wrap" aria-hidden="true"></div>
+        </div>
         <div class="loading" id="scansLoading" style="display: none;">Loading…</div>
+        <div class="skeleton-table-wrap" id="scansSkeletons">
+            <div class="skeleton-table">
+                <div class="skeleton-table-row" aria-hidden="true">
+                    <div class="skeleton skeleton-cell skeleton-cell-flex"></div>
+                    <div class="skeleton skeleton-cell skeleton-cell-w24"></div>
+                    <div class="skeleton skeleton-cell skeleton-cell-w20"></div>
+                </div>
+                <div class="skeleton-table-row" aria-hidden="true">
+                    <div class="skeleton skeleton-cell skeleton-cell-flex"></div>
+                    <div class="skeleton skeleton-cell skeleton-cell-w24"></div>
+                    <div class="skeleton skeleton-cell skeleton-cell-w20"></div>
+                </div>
+                <div class="skeleton-table-row" aria-hidden="true">
+                    <div class="skeleton skeleton-cell skeleton-cell-flex"></div>
+                    <div class="skeleton skeleton-cell skeleton-cell-w24"></div>
+                    <div class="skeleton skeleton-cell skeleton-cell-w20"></div>
+                </div>
+                <div class="skeleton-table-row" aria-hidden="true">
+                    <div class="skeleton skeleton-cell skeleton-cell-flex"></div>
+                    <div class="skeleton skeleton-cell skeleton-cell-w24"></div>
+                    <div class="skeleton skeleton-cell skeleton-cell-w20"></div>
+                </div>
+                <div class="skeleton-table-row" aria-hidden="true">
+                    <div class="skeleton skeleton-cell skeleton-cell-flex"></div>
+                    <div class="skeleton skeleton-cell skeleton-cell-w24"></div>
+                    <div class="skeleton skeleton-cell skeleton-cell-w20"></div>
+                </div>
+            </div>
+        </div>
         <div class="error" id="scansError" style="display: none;"></div>
         <div id="scansList"></div>
     </main>
