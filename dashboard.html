@@ -633,6 +633,97 @@
             margin-bottom: 1rem;
             flex-wrap: wrap;
         }
+        .stations-menubar {
+            display: flex;
+            align-items: center;
+            gap: 0;
+            margin-bottom: 1rem;
+            border: 1px solid #262626;
+            border-radius: 6px;
+            background: #000;
+            padding: 0;
+            width: fit-content;
+        }
+        .stations-menubar-item {
+            padding: 0.5rem 1rem;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: #e5e5e5;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+        }
+        .stations-menubar-item:hover {
+            background: #262626;
+        }
+        .stations-menubar-item:first-child { border-radius: 6px 0 0 6px; }
+        .stations-menubar-item:last-child { border-radius: 0 6px 6px 0; }
+        .stations-menubar-item + .stations-menubar-item {
+            border-left: 1px solid #262626;
+        }
+        .stations-menubar-item.a-link {
+            color: inherit;
+        }
+        .sheet-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1999;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.2s ease, visibility 0.2s ease;
+        }
+        .sheet-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        .sheet-content {
+            position: fixed;
+            top: 0;
+            right: 0;
+            width: 100%;
+            max-width: 420px;
+            height: 100vh;
+            background: #0a0a0a;
+            border-left: 1px solid #262626;
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+            transform: translateX(100%);
+            transition: transform 0.25s ease;
+        }
+        .sheet-overlay.active .sheet-content {
+            transform: translateX(0);
+        }
+        .sheet-header {
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid #262626;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .sheet-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+        .sheet-close {
+            padding: 0.35rem 0.75rem;
+            font-size: 0.9rem;
+            border: 1px solid #333;
+            border-radius: 6px;
+            background: #262626;
+            color: #e5e5e5;
+            cursor: pointer;
+        }
+        .sheet-close:hover { background: #333; }
+        .sheet-body {
+            flex: 1;
+            overflow: auto;
+            padding: 1rem 1.5rem;
+        }
         .see-map-btn {
             padding: 0.75rem 1.25rem;
             font-size: 0.9rem;
@@ -998,9 +1089,10 @@
         </div>
     </main>
     <main class="view-station-mgmt" id="viewStationMgmt">
-        <div class="station-view-actions">
-            <button type="button" class="add-station-btn" id="addStationBtn">Add station</button>
-            <a href="https://map.cuub.tech" class="see-map-btn" target="_blank" rel="noopener">See map</a>
+        <div class="stations-menubar">
+            <button type="button" class="stations-menubar-item" id="addStationBtn">Add station</button>
+            <a href="https://map.cuub.tech" class="stations-menubar-item a-link" target="_blank" rel="noopener">Map</a>
+            <button type="button" class="stations-menubar-item" id="openStationTableBtn">Open table</button>
         </div>
         <div class="loading" id="mgmtLoading" style="display: none;">Loading…</div>
         <div class="skeleton-table-wrap" id="stationMgmtSkeletons">
@@ -1034,6 +1126,17 @@
         </div>
         <div class="error" id="mgmtError" style="display: none;"></div>
         <div id="stationMgmtList"></div>
+        <div class="sheet-overlay" id="stationSheetOverlay" aria-hidden="true">
+            <div class="sheet-content">
+                <div class="sheet-header">
+                    <h2 class="sheet-title">Stations</h2>
+                    <button type="button" class="sheet-close" id="stationSheetClose" aria-label="Close">Close</button>
+                </div>
+                <div class="sheet-body">
+                    <div id="stationSheetTable"></div>
+                </div>
+            </div>
+        </div>
     </main>
     <main class="view-host-mgmt" id="viewHostMgmt">
         <div class="station-view-actions">

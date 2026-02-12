@@ -445,6 +445,7 @@
 
     function renderStationManagementList(stations) {
         var container = document.getElementById('stationMgmtList');
+        var sheetTable = document.getElementById('stationSheetTable');
         var loading = document.getElementById('mgmtLoading');
         var errEl = document.getElementById('mgmtError');
         var skeletons = document.getElementById('stationMgmtSkeletons');
@@ -454,38 +455,43 @@
         errEl.style.display = 'none';
         if (!Array.isArray(stations) || stations.length === 0) {
             container.innerHTML = '<p style="color: #a3a3a3;">No stations found.</p>';
+            if (sheetTable) sheetTable.innerHTML = '<p style="color: #a3a3a3;">No stations found.</p>';
             return;
         }
-        var html = '<table class="station-mgmt-table"><thead><tr>' +
-            '<th>ID</th><th>Title</th><th>Latitude</th><th>Longitude</th><th>Updated</th><th>Filled</th><th>Open</th><th></th></tr></thead><tbody>';
+        var mainHtml = '<table class="station-mgmt-table"><thead><tr><th>Title</th><th>Filled</th><th>Open</th></tr></thead><tbody>';
+        var sheetHtml = '<table class="station-mgmt-table"><thead><tr><th>Title</th><th>Filled</th><th>Open</th><th></th></tr></thead><tbody>';
         stations.forEach(function (s) {
             var id = escapeHtml(String(s.id || ''));
             var title = escapeHtml(String(s.title || ''));
-            var lat = escapeHtml(String(s.latitude != null ? s.latitude : ''));
-            var lng = escapeHtml(String(s.longitude != null ? s.longitude : ''));
-            var updated = escapeHtml(String(s.updated_at || ''));
+            var lat = s.latitude != null ? String(s.latitude) : '';
+            var lng = s.longitude != null ? String(s.longitude) : '';
             var filled = s.filled_slots != null ? s.filled_slots : '—';
             var open = s.open_slots != null ? s.open_slots : '—';
-            html += '<tr data-station-id="' + id + '">' +
-                '<td>' + id + '</td><td>' + title + '</td><td>' + lat + '</td><td>' + lng + '</td><td>' + updated + '</td><td>' + filled + '</td><td>' + open + '</td>' +
+            mainHtml += '<tr><td>' + title + '</td><td>' + filled + '</td><td>' + open + '</td></tr>';
+            sheetHtml += '<tr data-station-id="' + id + '" data-station-title="' + escapeHtml(String(s.title || '')) + '" data-station-lat="' + escapeHtml(lat) + '" data-station-lng="' + escapeHtml(lng) + '">' +
+                '<td>' + title + '</td><td>' + filled + '</td><td>' + open + '</td>' +
                 '<td><div class="table-actions"><button type="button" class="btn-edit" data-action="edit">Edit</button><button type="button" class="btn-delete" data-action="delete">Delete</button></div></td></tr>';
         });
-        html += '</tbody></table>';
-        container.innerHTML = html;
-        container.querySelectorAll('.btn-edit').forEach(function (btn) {
-            btn.addEventListener('click', function () {
-                var row = btn.closest('tr');
-                var sid = row && row.getAttribute('data-station-id');
-                if (sid) openEditStationModal(sid, row);
+        mainHtml += '</tbody></table>';
+        sheetHtml += '</tbody></table>';
+        container.innerHTML = mainHtml;
+        if (sheetTable) {
+            sheetTable.innerHTML = sheetHtml;
+            sheetTable.querySelectorAll('.btn-edit').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    var row = btn.closest('tr');
+                    var sid = row && row.getAttribute('data-station-id');
+                    if (sid) openEditStationModal(sid, row);
+                });
             });
-        });
-        container.querySelectorAll('.btn-delete').forEach(function (btn) {
-            btn.addEventListener('click', function () {
-                var row = btn.closest('tr');
-                var sid = row && row.getAttribute('data-station-id');
-                if (sid) openDeleteConfirmModal('station', sid, row);
+            sheetTable.querySelectorAll('.btn-delete').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    var row = btn.closest('tr');
+                    var sid = row && row.getAttribute('data-station-id');
+                    if (sid) openDeleteConfirmModal('station', sid, row);
+                });
             });
-        });
+        }
     }
 
     function renderHostManagementList(users) {
@@ -542,13 +548,21 @@
     }
 
     function openEditStationModal(stationId, row) {
-        var cells = row.querySelectorAll('td');
+        var title = row.getAttribute('data-station-title');
+        var lat = row.getAttribute('data-station-lat');
+        var lng = row.getAttribute('data-station-lng');
+        if (title == null || lat == null || lng == null) {
+            var cells = row.querySelectorAll('td');
+            title = (cells[1] && cells[1].textContent) || '';
+            lat = (cells[2] && cells[2].textContent) || '';
+            lng = (cells[3] && cells[3].textContent) || '';
+        }
         document.getElementById('stationFormTitle').textContent = 'Edit station';
         document.getElementById('stationId').value = stationId;
         document.getElementById('stationId').disabled = true;
-        document.getElementById('stationTitle').value = (cells[1] && cells[1].textContent) || '';
-        document.getElementById('stationLat').value = (cells[2] && cells[2].textContent) || '';
-        document.getElementById('stationLng').value = (cells[3] && cells[3].textContent) || '';
+        document.getElementById('stationTitle').value = title || '';
+        document.getElementById('stationLat').value = lat || '';
+        document.getElementById('stationLng').value = lng || '';
         document.getElementById('stationFormModal').setAttribute('data-edit-id', stationId);
         document.getElementById('stationFormModal').classList.add('active');
     }
@@ -561,7 +575,7 @@
 
     function openDeleteConfirmModal(type, id, row) {
         var msg = document.getElementById('deleteConfirmMessage');
-        var name = row && row.querySelectorAll('td')[1] ? row.querySelectorAll('td')[1].textContent : id;
+        var name = (row && row.getAttribute('data-station-title')) || (row && row.querySelectorAll('td')[0] && row.querySelectorAll('td')[0].textContent) || (row && row.querySelectorAll('td')[1] && row.querySelectorAll('td')[1].textContent) || id;
         msg.textContent = type === 'user'
             ? 'Are you sure you want to delete user "' + name + '"?'
             : 'Are you sure you want to delete "' + name + '"?';
@@ -820,6 +834,27 @@
         });
 
         document.getElementById('addStationBtn').addEventListener('click', openAddStationModal);
+        var openStationTableBtn = document.getElementById('openStationTableBtn');
+        var stationSheetOverlay = document.getElementById('stationSheetOverlay');
+        var stationSheetClose = document.getElementById('stationSheetClose');
+        if (openStationTableBtn) openStationTableBtn.addEventListener('click', function () {
+            if (stationSheetOverlay) {
+                stationSheetOverlay.classList.add('active');
+                stationSheetOverlay.setAttribute('aria-hidden', 'false');
+            }
+        });
+        if (stationSheetClose) stationSheetClose.addEventListener('click', function () {
+            if (stationSheetOverlay) {
+                stationSheetOverlay.classList.remove('active');
+                stationSheetOverlay.setAttribute('aria-hidden', 'true');
+            }
+        });
+        if (stationSheetOverlay) stationSheetOverlay.addEventListener('click', function (e) {
+            if (e.target === stationSheetOverlay) {
+                stationSheetOverlay.classList.remove('active');
+                stationSheetOverlay.setAttribute('aria-hidden', 'true');
+            }
+        });
         document.getElementById('stationFormCancel').addEventListener('click', closeStationFormModal);
         document.getElementById('stationForm').addEventListener('submit', async function (e) {
             e.preventDefault();
