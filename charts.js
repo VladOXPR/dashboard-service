@@ -141,18 +141,81 @@
                 plugins: {
                     legend: { display: false },
                     tooltip: {
+                        enabled: false,
                         mode: 'index',
                         intersect: false,
-                        events: ['mousemove', 'mouseout'],
-                        callbacks: {
-                            afterLabel: function (context) {
-                                var i = context.dataIndex;
-                                var row = data[i];
-                                if (!row) return '';
-                                var parts = [];
-                                if (context.datasetIndex === 0 && row.money != null) parts.push('Revenue: ' + row.money);
-                                if (context.datasetIndex === 1 && row.pmoney != null) parts.push('Prev revenue: ' + row.pmoney);
-                                return parts.length ? parts.join('\n') : '';
+                        external: function (context) {
+                            var el = document.getElementById('mtdChartTooltip');
+                            if (!el) return;
+                            var tp = context.tooltip;
+                            if (tp.opacity === 0) {
+                                el.classList.remove('visible');
+                                el.setAttribute('aria-hidden', 'true');
+                                return;
+                            }
+                            var i = tp.dataPoints && tp.dataPoints[0] ? tp.dataPoints[0].dataIndex : 0;
+                            var row = data[i];
+                            if (!row) {
+                                el.classList.remove('visible');
+                                return;
+                            }
+                            var dateStr = (labels[i] || '').trim();
+                            var moneyStr = row.money != null && row.money !== '' ? String(row.money) : '$0';
+                            var pmoneyStr = row.pmoney != null && row.pmoney !== '' ? String(row.pmoney) : '$0';
+                            var moneyNum = parseFloat(String(moneyStr).replace(/[$,]/g, ''), 10) || 0;
+                            var pmoneyNum = parseFloat(String(pmoneyStr).replace(/[$,]/g, ''), 10) || 0;
+                            var ref = Math.abs(pmoneyNum);
+                            var pct = ref === 0 ? 0 : ((moneyNum - pmoneyNum) / ref) * 100;
+                            var pctStr = (pct >= 0 ? '+' : '') + pct.toFixed(2) + '%';
+                            var pctClass = pct >= 0 ? 'chart-tooltip-pct-positive' : 'chart-tooltip-pct-negative';
+                            var prevDateStr = dateStr;
+                            (function () {
+                                var dStr = (row.date || '').trim();
+                                var comma = dStr.indexOf(',');
+                                var firstPart = comma > 0 ? dStr.slice(0, comma).trim() : dStr;
+                                var yearPart = comma > 0 ? dStr.slice(comma + 1).trim() : '';
+                                var year = yearPart ? parseInt(yearPart, 10) : now.getFullYear();
+                                var spaceIdx = firstPart.indexOf(' ');
+                                var monthStr = spaceIdx > 0 ? firstPart.slice(0, spaceIdx).trim() : '';
+                                var day = spaceIdx > 0 ? parseInt(firstPart.slice(spaceIdx + 1).trim(), 10) : 1;
+                                var monthIndex = shortMonths.indexOf(monthStr);
+                                if (monthIndex < 0) monthIndex = now.getMonth();
+                                var prevDate = new Date(year, monthIndex - 1, day);
+                                prevDateStr = shortMonths[prevDate.getMonth()] + ' ' + prevDate.getDate();
+                            })();
+                            el.innerHTML =
+                                '<div class="chart-tooltip-header">' +
+                                '<span>Net volume</span>' +
+                                '<span class="chart-tooltip-pct ' + pctClass + '">' + pctStr + '</span>' +
+                                '</div>' +
+                                '<div class="chart-tooltip-divider"></div>' +
+                                '<div class="chart-tooltip-body">' +
+                                '<div class="chart-tooltip-row">' +
+                                '<span class="chart-tooltip-square blue"></span>' +
+                                '<span class="chart-tooltip-date">' + dateStr + '</span>' +
+                                '<span class="chart-tooltip-value">' + moneyStr + '</span>' +
+                                '</div>' +
+                                '<div class="chart-tooltip-row">' +
+                                '<span class="chart-tooltip-square grey"></span>' +
+                                '<span class="chart-tooltip-date">' + prevDateStr + '</span>' +
+                                '<span class="chart-tooltip-value">' + pmoneyStr + '</span>' +
+                                '</div>' +
+                                '</div>';
+                            el.classList.add('visible');
+                            el.setAttribute('aria-hidden', 'false');
+                            var wrap = el.parentElement;
+                            var canvas = context.chart.canvas;
+                            if (wrap && canvas) {
+                                var rect = canvas.getBoundingClientRect();
+                                var wrapRect = wrap.getBoundingClientRect();
+                                var caretX = tp.caretX != null ? tp.caretX : tp.x;
+                                var caretY = tp.caretY != null ? tp.caretY : tp.y;
+                                var left = rect.left - wrapRect.left + caretX;
+                                var top = rect.top - wrapRect.top + caretY;
+                                var w = el.offsetWidth || 180;
+                                var h = el.offsetHeight || 80;
+                                el.style.left = Math.max(8, Math.min(left - w / 2, wrap.offsetWidth - w - 8)) + 'px';
+                                el.style.top = (top - h - 10) + 'px';
                             }
                         }
                     }

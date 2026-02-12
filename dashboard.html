@@ -461,6 +461,83 @@
         .mtd-chart-card .mtd-chart-canvas-wrap canvas {
             max-height: 240px;
         }
+        /* Chart tooltip (custom HTML) */
+        .chart-tooltip-custom {
+            position: absolute;
+            z-index: 100;
+            padding: 0;
+            background: #000;
+            border: 1px solid #262626;
+            border-radius: 8px;
+            min-width: 180px;
+            pointer-events: none;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.15s ease, visibility 0.15s ease;
+        }
+        .chart-tooltip-custom.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+        .chart-tooltip-custom .chart-tooltip-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.5rem;
+            padding: 0.5rem 0.75rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #e5e5e5;
+        }
+        .chart-tooltip-custom .chart-tooltip-pct {
+            font-weight: 600;
+            font-size: 0.875rem;
+        }
+        .chart-tooltip-custom .chart-tooltip-pct-positive {
+            color: #22c55e;
+        }
+        .chart-tooltip-custom .chart-tooltip-pct-negative {
+            color: #ef4444;
+        }
+        .chart-tooltip-custom .chart-tooltip-divider {
+            height: 1px;
+            background: #262626;
+            margin: 0;
+        }
+        .chart-tooltip-custom .chart-tooltip-body {
+            padding: 0.5rem 0.75rem 0.75rem;
+        }
+        .chart-tooltip-custom .chart-tooltip-row {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.8125rem;
+            color: #e5e5e5;
+            margin-bottom: 0.35rem;
+        }
+        .chart-tooltip-custom .chart-tooltip-row:last-child {
+            margin-bottom: 0;
+        }
+        .chart-tooltip-custom .chart-tooltip-square {
+            width: 10px;
+            height: 10px;
+            border-radius: 2px;
+            flex-shrink: 0;
+        }
+        .chart-tooltip-custom .chart-tooltip-square.blue {
+            background: #0099FF;
+        }
+        .chart-tooltip-custom .chart-tooltip-square.grey {
+            background: #737373;
+        }
+        .chart-tooltip-custom .chart-tooltip-date {
+            flex: 1;
+            color: #a3a3a3;
+        }
+        .chart-tooltip-custom .chart-tooltip-value {
+            font-weight: 500;
+            color: #e5e5e5;
+        }
         .mtd-stats-row {
             display: flex;
             gap: 1rem;
@@ -1163,6 +1240,7 @@
             <div class="mtd-chart-description" id="mtdChartDescription"></div>
             <div class="mtd-chart-canvas-wrap">
                 <canvas id="mtdChartCanvas" aria-label="Month to date rents chart"></canvas>
+                <div id="mtdChartTooltip" class="chart-tooltip-custom" aria-hidden="true"></div>
             </div>
         </div>
         <div class="mtd-stats-row" id="mtdStatsRow" style="display: none;">
