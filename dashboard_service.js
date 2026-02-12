@@ -107,7 +107,9 @@
     }
 
     function showLoading() {
-        document.getElementById('loading').style.display = 'block';
+        document.getElementById('loading').style.display = 'none';
+        var skeletons = document.getElementById('performanceSkeletons');
+        if (skeletons) skeletons.style.display = 'block';
         document.getElementById('error').style.display = 'none';
         var stationsEl = document.getElementById('stations');
         if (stationsEl) stationsEl.style.display = 'none';
@@ -122,6 +124,8 @@
 
     function showError(msg) {
         document.getElementById('loading').style.display = 'none';
+        var skeletons = document.getElementById('performanceSkeletons');
+        if (skeletons) skeletons.style.display = 'none';
         document.getElementById('error').style.display = 'block';
         document.getElementById('error').textContent = msg;
         var stationsEl = document.getElementById('stations');
@@ -137,6 +141,8 @@
 
     function showPerformanceView() {
         document.getElementById('loading').style.display = 'none';
+        var skeletons = document.getElementById('performanceSkeletons');
+        if (skeletons) skeletons.style.display = 'none';
         document.getElementById('error').style.display = 'none';
         var stationsEl = document.getElementById('stations');
         if (stationsEl) stationsEl.style.display = 'none';

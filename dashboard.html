@@ -254,6 +254,65 @@
             color: #a3a3a3;
         }
         .error { color: #fca5a5; }
+        .performance-skeletons {
+            display: none;
+        }
+        .skeleton {
+            background: linear-gradient(90deg, #262626 25%, #333 50%, #262626 75%);
+            background-size: 200% 100%;
+            animation: skeleton-shimmer 1.2s ease-in-out infinite;
+            border-radius: 6px;
+        }
+        @keyframes skeleton-shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+        .skeleton-card {
+            background: #000;
+            border: 1px solid #262626;
+            border-radius: 12px;
+            padding: 1.25rem;
+            margin-bottom: 1.5rem;
+        }
+        /* Big chart card: title (1.1rem) + amount row (75px * 1.1) + description (0.9rem) + chart (240px) */
+        .skeleton-card .skeleton-title {
+            height: 1.1rem;
+            width: 66%;
+            margin-bottom: 0.25rem;
+        }
+        .skeleton-card .skeleton-amount-row {
+            height: 82.5px;
+            width: 55%;
+            margin-top: 0.25rem;
+            margin-bottom: 1rem;
+        }
+        .skeleton-card .skeleton-subtitle {
+            height: 0.9rem;
+            width: 50%;
+            margin-bottom: 1rem;
+        }
+        .skeleton-card .skeleton-chart {
+            height: 240px;
+            width: 100%;
+        }
+        /* Mini cards: title (1.1rem) + amount (75px * 1.1) */
+        .skeleton-card .skeleton-amount {
+            height: 82.5px;
+            width: 60%;
+            margin-top: 0.25rem;
+        }
+        .skeleton-stats-row .skeleton-card .skeleton-title {
+            margin-bottom: 0.25rem;
+        }
+        .skeleton-stats-row {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .skeleton-stats-row .skeleton-card {
+            flex: 1;
+            margin-bottom: 0;
+        }
         .stations {
             display: grid;
             gap: 1rem;
@@ -848,6 +907,24 @@
             <div class="main-scroll">
     <main class="view-performance" id="viewPerformance">
         <div class="loading" id="loading">Loading…</div>
+        <div class="performance-skeletons" id="performanceSkeletons">
+            <div class="skeleton-card">
+                <div class="skeleton skeleton-title"></div>
+                <div class="skeleton skeleton-amount-row"></div>
+                <div class="skeleton skeleton-subtitle"></div>
+                <div class="skeleton skeleton-chart"></div>
+            </div>
+            <div class="skeleton-stats-row">
+                <div class="skeleton-card">
+                    <div class="skeleton skeleton-title"></div>
+                    <div class="skeleton skeleton-amount"></div>
+                </div>
+                <div class="skeleton-card">
+                    <div class="skeleton skeleton-title"></div>
+                    <div class="skeleton skeleton-amount"></div>
+                </div>
+            </div>
+        </div>
         <div class="error" id="error" style="display: none;"></div>
         <div class="mtd-chart-card" id="mtdChartCard" style="display: none;">
             <div class="mtd-chart-title" id="mtdChartTitle"></div>
