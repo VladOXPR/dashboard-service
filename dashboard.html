@@ -761,6 +761,19 @@
             font-weight: 600;
         }
         .station-mgmt-table tr:last-child td { border-bottom: none; }
+        .station-mgmt-table .station-status-cell {
+            width: 1%;
+            padding-right: 0.5rem;
+            vertical-align: middle;
+        }
+        .station-status-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+        .station-status-dot.online { background: #22c55e; }
+        .station-status-dot.offline { background: #ef4444; }
         .station-mgmt-table .table-actions {
             display: flex;
             gap: 5px;

@@ -458,8 +458,8 @@
             if (sheetTable) sheetTable.innerHTML = '<p style="color: #a3a3a3;">No stations found.</p>';
             return;
         }
-        var mainHtml = '<table class="station-mgmt-table"><thead><tr><th>Title</th><th>Filled</th><th>Open</th></tr></thead><tbody>';
-        var sheetHtml = '<table class="station-mgmt-table"><thead><tr><th>Title</th><th>Filled</th><th>Open</th><th></th></tr></thead><tbody>';
+        var mainHtml = '<table class="station-mgmt-table"><thead><tr><th></th><th>Title</th><th>Filled</th><th>Open</th></tr></thead><tbody>';
+        var sheetHtml = '<table class="station-mgmt-table"><thead><tr><th></th><th>Title</th><th>Filled</th><th>Open</th><th></th></tr></thead><tbody>';
         stations.forEach(function (s) {
             var id = escapeHtml(String(s.id || ''));
             var title = escapeHtml(String(s.title || ''));
@@ -467,9 +467,12 @@
             var lng = s.longitude != null ? String(s.longitude) : '';
             var filled = s.filled_slots != null ? s.filled_slots : '—';
             var open = s.open_slots != null ? s.open_slots : '—';
-            mainHtml += '<tr><td>' + title + '</td><td>' + filled + '</td><td>' + open + '</td></tr>';
+            var isOnline = s.online === true;
+            var statusClass = isOnline ? 'online' : 'offline';
+            var statusDot = '<span class="station-status-dot ' + statusClass + '" aria-label="' + (isOnline ? 'Online' : 'Offline') + '"></span>';
+            mainHtml += '<tr><td class="station-status-cell">' + statusDot + '</td><td>' + title + '</td><td>' + filled + '</td><td>' + open + '</td></tr>';
             sheetHtml += '<tr data-station-id="' + id + '" data-station-title="' + escapeHtml(String(s.title || '')) + '" data-station-lat="' + escapeHtml(lat) + '" data-station-lng="' + escapeHtml(lng) + '">' +
-                '<td>' + title + '</td><td>' + filled + '</td><td>' + open + '</td>' +
+                '<td class="station-status-cell">' + statusDot + '</td><td>' + title + '</td><td>' + filled + '</td><td>' + open + '</td>' +
                 '<td><div class="table-actions"><button type="button" class="btn-edit" data-action="edit">Edit</button><button type="button" class="btn-delete" data-action="delete">Delete</button></div></td></tr>';
         });
         mainHtml += '</tbody></table>';
