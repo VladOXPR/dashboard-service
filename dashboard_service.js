@@ -445,7 +445,6 @@
 
     function renderStationManagementList(stations) {
         var container = document.getElementById('stationMgmtList');
-        var sheetTable = document.getElementById('stationSheetTable');
         var loading = document.getElementById('mgmtLoading');
         var errEl = document.getElementById('mgmtError');
         var skeletons = document.getElementById('stationMgmtSkeletons');
@@ -455,11 +454,9 @@
         errEl.style.display = 'none';
         if (!Array.isArray(stations) || stations.length === 0) {
             container.innerHTML = '<p style="color: #a3a3a3;">No stations found.</p>';
-            if (sheetTable) sheetTable.innerHTML = '<p style="color: #a3a3a3;">No stations found.</p>';
             return;
         }
-        var mainHtml = '<table class="station-mgmt-table"><thead><tr><th></th><th>Title</th><th>Filled</th><th>Open</th></tr></thead><tbody>';
-        var sheetHtml = '<table class="station-mgmt-table"><thead><tr><th></th><th>Title</th><th>Filled</th><th>Open</th><th></th></tr></thead><tbody>';
+        var html = '<table class="station-mgmt-table"><thead><tr><th></th><th>Title</th><th>ID</th><th>Filled</th><th>Open</th><th></th></tr></thead><tbody>';
         stations.forEach(function (s) {
             var id = escapeHtml(String(s.id || ''));
             var title = escapeHtml(String(s.title || ''));
@@ -470,31 +467,26 @@
             var isOnline = s.online === true;
             var statusClass = isOnline ? 'online' : 'offline';
             var statusDot = '<span class="station-status-dot ' + statusClass + '" aria-label="' + (isOnline ? 'Online' : 'Offline') + '"></span>';
-            mainHtml += '<tr><td class="station-status-cell">' + statusDot + '</td><td>' + title + '</td><td>' + filled + '</td><td>' + open + '</td></tr>';
-            sheetHtml += '<tr data-station-id="' + id + '" data-station-title="' + escapeHtml(String(s.title || '')) + '" data-station-lat="' + escapeHtml(lat) + '" data-station-lng="' + escapeHtml(lng) + '">' +
-                '<td class="station-status-cell">' + statusDot + '</td><td>' + title + '</td><td>' + filled + '</td><td>' + open + '</td>' +
+            html += '<tr data-station-id="' + id + '" data-station-title="' + escapeHtml(String(s.title || '')) + '" data-station-lat="' + escapeHtml(lat) + '" data-station-lng="' + escapeHtml(lng) + '">' +
+                '<td class="station-status-cell">' + statusDot + '</td><td>' + title + '</td><td>' + id + '</td><td>' + filled + '</td><td>' + open + '</td>' +
                 '<td><div class="table-actions"><button type="button" class="btn-edit" data-action="edit">Edit</button><button type="button" class="btn-delete" data-action="delete">Delete</button></div></td></tr>';
         });
-        mainHtml += '</tbody></table>';
-        sheetHtml += '</tbody></table>';
-        container.innerHTML = mainHtml;
-        if (sheetTable) {
-            sheetTable.innerHTML = sheetHtml;
-            sheetTable.querySelectorAll('.btn-edit').forEach(function (btn) {
-                btn.addEventListener('click', function () {
-                    var row = btn.closest('tr');
-                    var sid = row && row.getAttribute('data-station-id');
-                    if (sid) openEditStationModal(sid, row);
-                });
+        html += '</tbody></table>';
+        container.innerHTML = html;
+        container.querySelectorAll('.btn-edit').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var row = btn.closest('tr');
+                var sid = row && row.getAttribute('data-station-id');
+                if (sid) openEditStationModal(sid, row);
             });
-            sheetTable.querySelectorAll('.btn-delete').forEach(function (btn) {
-                btn.addEventListener('click', function () {
-                    var row = btn.closest('tr');
-                    var sid = row && row.getAttribute('data-station-id');
-                    if (sid) openDeleteConfirmModal('station', sid, row);
-                });
+        });
+        container.querySelectorAll('.btn-delete').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var row = btn.closest('tr');
+                var sid = row && row.getAttribute('data-station-id');
+                if (sid) openDeleteConfirmModal('station', sid, row);
             });
-        }
+        });
     }
 
     function renderHostManagementList(users) {
@@ -598,7 +590,7 @@
     function openAddUserModal() {
         document.getElementById('userFormTitle').textContent = 'Add user';
         document.getElementById('userForm').reset();
-        document.getElementById('userFormAddFields').style.display = 'block';
+        document.getElementById('userFormAddFields').style.display = 'flex';
         document.getElementById('userFormEditFields').style.display = 'none';
         document.getElementById('userFormModal').removeAttribute('data-edit-id');
         document.getElementById('userFormModal').classList.add('active');
@@ -627,7 +619,7 @@
         document.getElementById('userUsername').value = username;
         document.getElementById('userTypeEdit').value = type || 'HOST';
         document.getElementById('userFormAddFields').style.display = 'none';
-        document.getElementById('userFormEditFields').style.display = 'block';
+        document.getElementById('userFormEditFields').style.display = 'flex';
         document.getElementById('userFormModal').setAttribute('data-edit-id', userId);
         document.getElementById('userFormModal').classList.add('active');
         var listEl = document.getElementById('userStationIdsList');
@@ -677,7 +669,7 @@
         document.getElementById('userFormModal').classList.remove('active');
         document.getElementById('userFormModal').removeAttribute('data-edit-id');
         document.getElementById('userFormModal')._editStationIds = null;
-        document.getElementById('userFormAddFields').style.display = 'block';
+        document.getElementById('userFormAddFields').style.display = 'flex';
         document.getElementById('userFormEditFields').style.display = 'none';
     }
 
@@ -837,27 +829,6 @@
         });
 
         document.getElementById('addStationBtn').addEventListener('click', openAddStationModal);
-        var openStationTableBtn = document.getElementById('openStationTableBtn');
-        var stationSheetOverlay = document.getElementById('stationSheetOverlay');
-        var stationSheetClose = document.getElementById('stationSheetClose');
-        if (openStationTableBtn) openStationTableBtn.addEventListener('click', function () {
-            if (stationSheetOverlay) {
-                stationSheetOverlay.classList.add('active');
-                stationSheetOverlay.setAttribute('aria-hidden', 'false');
-            }
-        });
-        if (stationSheetClose) stationSheetClose.addEventListener('click', function () {
-            if (stationSheetOverlay) {
-                stationSheetOverlay.classList.remove('active');
-                stationSheetOverlay.setAttribute('aria-hidden', 'true');
-            }
-        });
-        if (stationSheetOverlay) stationSheetOverlay.addEventListener('click', function (e) {
-            if (e.target === stationSheetOverlay) {
-                stationSheetOverlay.classList.remove('active');
-                stationSheetOverlay.setAttribute('aria-hidden', 'true');
-            }
-        });
         document.getElementById('stationFormCancel').addEventListener('click', closeStationFormModal);
         document.getElementById('stationForm').addEventListener('submit', async function (e) {
             e.preventDefault();

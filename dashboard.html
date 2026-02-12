@@ -5,9 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CUUB Dashboard</title>
     <style>
+        @font-face {
+            font-family: 'TT Hoves Pro';
+            src: url('tt_hoves_pro/TT Hoves Pro Trial Medium.ttf') format('truetype');
+            font-weight: 500;
+            font-style: normal;
+        }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-family: 'TT Hoves Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             min-height: 100vh;
             background: #000;
             color: #e5e5e5;
@@ -556,17 +562,6 @@
         .scans-table td { background: #000; }
         .scans-table th { background: #262626; color: #a3a3a3; font-weight: 600; }
         .scans-table tr:last-child td { border-bottom: none; }
-        .modal-box select {
-            width: 100%;
-            padding: 0.5rem 0.75rem;
-            margin-bottom: 1rem;
-            font-size: 0.9rem;
-            border: 1px solid #333;
-            border-radius: 6px;
-            background: #262626;
-            color: #e5e5e5;
-        }
-        .modal-box select:focus { outline: none; border-color: #0099FF; }
         .station-ids-list {
             display: flex;
             flex-wrap: wrap;
@@ -745,7 +740,10 @@
             background: #000;
             border-radius: 12px;
             overflow: hidden;
-            border: 1px solid #262626;
+            border: 2px solid #404040;
+        }
+        .station-mgmt-table tr {
+            background: #000;
         }
         .station-mgmt-table th,
         .station-mgmt-table td {
@@ -754,11 +752,14 @@
             border-bottom: 1px solid #262626;
         }
         .station-mgmt-table td { background: #000; }
+        .station-mgmt-table td:nth-child(2) {
+            font-weight: 700;
+        }
         .station-mgmt-table th {
-            background: #262626;
-            color: #a3a3a3;
+            background: #000;
+            color: #e5e5e5;
             font-size: 0.85rem;
-            font-weight: 600;
+            font-weight: 700;
         }
         .station-mgmt-table tr:last-child td { border-bottom: none; }
         .station-mgmt-table .station-status-cell {
@@ -793,42 +794,109 @@
         }
         .station-mgmt-table .btn-edit:hover { background: #333; }
         .station-mgmt-table .btn-delete {
-            background: #dc2626;
-            color: white;
+            background: #3C1C1D;
+            color: #FF6467;
         }
-        .station-mgmt-table .btn-delete:hover { background: #b91c1c; }
+        .station-mgmt-table .btn-delete:hover { background: #4a2324; color: #ff7a7c; }
         .modal-overlay {
             position: fixed;
             inset: 0;
-            background: rgba(0,0,0,0.7);
+            background: rgba(0,0,0,0.5);
             display: none;
             align-items: center;
             justify-content: center;
             z-index: 2000;
+            backdrop-filter: blur(0);
+            -webkit-backdrop-filter: blur(0);
+            transition: backdrop-filter 0.2s ease, background 0.2s ease;
         }
-        .modal-overlay.active { display: flex; }
+        .modal-overlay.active {
+            display: flex;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            background: rgba(0,0,0,0.4);
+        }
         .modal-box {
             background: #1a1a1a;
             border: 1px solid #262626;
             border-radius: 12px;
-            padding: 1.5rem;
+            padding: 1.5rem 1.75rem;
             max-width: 420px;
             width: 90%;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
         }
-        .modal-box h3 { margin-bottom: 1rem; font-size: 1.1rem; }
-        .modal-box label { display: block; font-size: 0.85rem; color: #a3a3a3; margin-bottom: 0.25rem; }
-        .modal-box input {
+        .modal-box h3 {
+            margin-bottom: 1.25rem;
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: #e5e5e5;
+        }
+        .modal-form {
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+        }
+        .modal-box .field {
+            display: flex;
+            flex-direction: column;
+            gap: 0.375rem;
+        }
+        .modal-box .field + .field { margin-top: 0; }
+        .modal-box .field-label,
+        .modal-box label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #e5e5e5;
+            margin-bottom: 0.25rem;
+        }
+        .modal-box .field-description {
+            font-size: 0.8rem;
+            color: #737373;
+            margin-top: 0.25rem;
+        }
+        .modal-box .field-separator {
+            height: 1px;
+            background: #262626;
+            margin: 0.25rem 0;
+        }
+        .modal-box input,
+        .modal-box select {
             width: 100%;
             padding: 0.5rem 0.75rem;
-            margin-bottom: 1rem;
             font-size: 0.9rem;
             border: 1px solid #333;
             border-radius: 6px;
             background: #262626;
             color: #e5e5e5;
         }
-        .modal-box input:focus { outline: none; border-color: #0099FF; }
-        .modal-actions { display: flex; gap: 0.75rem; justify-content: flex-end; margin-top: 1rem; }
+        .modal-box input {
+            margin-bottom: 0;
+        }
+        .modal-box select { margin-bottom: 0; }
+        .modal-box input:focus,
+        .modal-box select:focus { outline: none; border-color: #0099FF; }
+        .modal-box .field-group {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        .modal-box .field-group > label,
+        .modal-box .field-group > .field { margin-bottom: 0; }
+        .modal-box #userFormAddFields,
+        .modal-box #userFormEditFields {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        .modal-actions {
+            display: flex;
+            gap: 0.75rem;
+            justify-content: flex-end;
+            margin-top: 1.25rem;
+            padding-top: 1.25rem;
+            border-top: 1px solid #262626;
+        }
         .modal-actions button {
             padding: 0.5rem 1rem;
             font-size: 0.9rem;
@@ -837,9 +905,16 @@
             border-radius: 6px;
             cursor: pointer;
         }
-        .modal-actions .btn-cancel { background: #262626; color: #e5e5e5; }
+        .modal-actions .btn-cancel {
+            background: #262626;
+            color: #e5e5e5;
+            border: 1px solid #333;
+        }
         .modal-actions .btn-cancel:hover { background: #333; }
-        .modal-actions .btn-submit { background: #0099FF; color: white; }
+        .modal-actions .btn-submit {
+            background: #0099FF;
+            color: white;
+        }
         .modal-actions .btn-submit:hover { background: #008ae6; }
 
         @media (max-width: 500px) {
@@ -1105,7 +1180,6 @@
         <div class="stations-menubar">
             <button type="button" class="stations-menubar-item" id="addStationBtn">Add station</button>
             <a href="https://map.cuub.tech" class="stations-menubar-item a-link" target="_blank" rel="noopener">Map</a>
-            <button type="button" class="stations-menubar-item" id="openStationTableBtn">Open table</button>
         </div>
         <div class="loading" id="mgmtLoading" style="display: none;">Loading…</div>
         <div class="skeleton-table-wrap" id="stationMgmtSkeletons">
@@ -1139,17 +1213,6 @@
         </div>
         <div class="error" id="mgmtError" style="display: none;"></div>
         <div id="stationMgmtList"></div>
-        <div class="sheet-overlay" id="stationSheetOverlay" aria-hidden="true">
-            <div class="sheet-content">
-                <div class="sheet-header">
-                    <h2 class="sheet-title">Stations</h2>
-                    <button type="button" class="sheet-close" id="stationSheetClose" aria-label="Close">Close</button>
-                </div>
-                <div class="sheet-body">
-                    <div id="stationSheetTable"></div>
-                </div>
-            </div>
-        </div>
     </main>
     <main class="view-host-mgmt" id="viewHostMgmt">
         <div class="station-view-actions">
@@ -1237,34 +1300,47 @@
     <div class="modal-overlay" id="userFormModal">
         <div class="modal-box">
             <h3 id="userFormTitle">Add user</h3>
-            <form id="userForm">
-                <label for="userUsername">Username</label>
-                <input type="text" id="userUsername" name="username" required placeholder="username">
-                <div id="userFormAddFields">
-                    <label for="userType">Type</label>
-                    <select id="userType" name="type">
-                        <option value="HOST">HOST</option>
-                        <option value="DISTRIBUTER">DISTRIBUTER</option>
-                        <option value="ADMIN">ADMIN</option>
-                    </select>
-                    <label for="userStationId">Station ID</label>
-                    <input type="text" id="userStationId" name="station_id" placeholder="e.g. CUBT062510000029">
-                </div>
-                <div id="userFormEditFields" style="display: none;">
-                    <label for="userTypeEdit">Type</label>
-                    <select id="userTypeEdit" name="type">
-                        <option value="HOST">HOST</option>
-                        <option value="DISTRIBUTER">DISTRIBUTER</option>
-                        <option value="DISTRIBUTOR">DISTRIBUTOR</option>
-                        <option value="ADMIN">ADMIN</option>
-                    </select>
-                    <label>Station IDs</label>
-                    <div id="userStationIdsList" class="station-ids-list"></div>
-                    <div class="station-ids-add">
-                        <select id="userAddStationSelect">
-                            <option value="">— Add station —</option>
-                        </select>
-                        <button type="button" id="userAddStationBtn">Add</button>
+            <form id="userForm" class="modal-form">
+                <div class="field-group">
+                    <div class="field">
+                        <label for="userUsername" class="field-label">Username</label>
+                        <input type="text" id="userUsername" name="username" required placeholder="username">
+                    </div>
+                    <div id="userFormAddFields">
+                        <div class="field">
+                            <label for="userType" class="field-label">Type</label>
+                            <select id="userType" name="type">
+                                <option value="HOST">HOST</option>
+                                <option value="DISTRIBUTER">DISTRIBUTER</option>
+                                <option value="ADMIN">ADMIN</option>
+                            </select>
+                        </div>
+                        <div class="field">
+                            <label for="userStationId" class="field-label">Station ID</label>
+                            <input type="text" id="userStationId" name="station_id" placeholder="e.g. CUBT062510000029">
+                            <span class="field-description">Optional for new users</span>
+                        </div>
+                    </div>
+                    <div id="userFormEditFields" style="display: none;">
+                        <div class="field">
+                            <label for="userTypeEdit" class="field-label">Type</label>
+                            <select id="userTypeEdit" name="type">
+                                <option value="HOST">HOST</option>
+                                <option value="DISTRIBUTER">DISTRIBUTER</option>
+                                <option value="DISTRIBUTOR">DISTRIBUTOR</option>
+                                <option value="ADMIN">ADMIN</option>
+                            </select>
+                        </div>
+                        <div class="field">
+                            <label class="field-label">Station IDs</label>
+                            <div id="userStationIdsList" class="station-ids-list"></div>
+                            <div class="station-ids-add">
+                                <select id="userAddStationSelect">
+                                    <option value="">— Add station —</option>
+                                </select>
+                                <button type="button" id="userAddStationBtn">Add</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-actions">
@@ -1277,15 +1353,26 @@
     <div class="modal-overlay" id="stationFormModal">
         <div class="modal-box">
             <h3 id="stationFormTitle">Add station</h3>
-            <form id="stationForm">
-                <label for="stationId">ID</label>
-                <input type="text" id="stationId" name="id" required placeholder="e.g. CUBT062510000003">
-                <label for="stationTitle">Title</label>
-                <input type="text" id="stationTitle" name="title" required placeholder="Station name">
-                <label for="stationLat">Latitude</label>
-                <input type="number" id="stationLat" name="latitude" step="any" required placeholder="41.94960">
-                <label for="stationLng">Longitude</label>
-                <input type="number" id="stationLng" name="longitude" step="any" required placeholder="-87.65861">
+            <form id="stationForm" class="modal-form">
+                <div class="field-group">
+                    <div class="field">
+                        <label for="stationId" class="field-label">ID</label>
+                        <input type="text" id="stationId" name="id" required placeholder="e.g. CUBT062510000003">
+                        <span class="field-description">Unique station identifier</span>
+                    </div>
+                    <div class="field">
+                        <label for="stationTitle" class="field-label">Title</label>
+                        <input type="text" id="stationTitle" name="title" required placeholder="Station name">
+                    </div>
+                    <div class="field">
+                        <label for="stationLat" class="field-label">Latitude</label>
+                        <input type="number" id="stationLat" name="latitude" step="any" required placeholder="41.94960">
+                    </div>
+                    <div class="field">
+                        <label for="stationLng" class="field-label">Longitude</label>
+                        <input type="number" id="stationLng" name="longitude" step="any" required placeholder="-87.65861">
+                    </div>
+                </div>
                 <div class="modal-actions">
                     <button type="button" class="btn-cancel" id="stationFormCancel">Cancel</button>
                     <button type="submit" class="btn-submit" id="stationFormSubmit">Save</button>
