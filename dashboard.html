@@ -327,11 +327,27 @@
             font-weight: 600;
             margin-bottom: 0.25rem;
         }
+        .mtd-chart-card .mtd-chart-amount-wrap {
+            display: flex;
+            align-items: baseline;
+            gap: 0.5rem;
+            margin-top: 0.25rem;
+        }
         .mtd-chart-card .mtd-chart-amount {
             font-size: 75px;
             font-weight: 600;
             line-height: 1.1;
-            margin-top: 0.25rem;
+        }
+        .mtd-chart-card .mtd-chart-pct {
+            font-size: 30px;
+            font-weight: 600;
+            line-height: 1.1;
+        }
+        .mtd-chart-card .mtd-chart-pct-positive {
+            color: #22c55e;
+        }
+        .mtd-chart-card .mtd-chart-pct-negative {
+            color: #ef4444;
         }
         .mtd-chart-card .mtd-chart-description {
             font-size: 0.9rem;
@@ -345,6 +361,29 @@
         }
         .mtd-chart-card .mtd-chart-canvas-wrap canvas {
             max-height: 240px;
+        }
+        .mtd-stats-row {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .mtd-mini-card {
+            flex: 1;
+            background: #000;
+            border: 1px solid #262626;
+            border-radius: 12px;
+            padding: 1.25rem;
+        }
+        .mtd-mini-card .mtd-mini-card-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+        .mtd-mini-card .mtd-mini-card-amount {
+            font-size: 75px;
+            font-weight: 600;
+            line-height: 1.1;
+            margin-top: 0.25rem;
         }
         .view-performance { display: block; }
         .view-performance.hidden { display: none; }
@@ -817,7 +856,16 @@
                 <canvas id="mtdChartCanvas" aria-label="Month to date rents chart"></canvas>
             </div>
         </div>
-        <div class="stations" id="stations" style="display: none;"></div>
+        <div class="mtd-stats-row" id="mtdStatsRow" style="display: none;">
+            <div class="mtd-mini-card">
+                <div class="mtd-mini-card-title">Today</div>
+                <div class="mtd-mini-card-amount" id="mtdTodayAmount">$0</div>
+            </div>
+            <div class="mtd-mini-card">
+                <div class="mtd-mini-card-title" id="mtdDailyAvgTitle">February daily average</div>
+                <div class="mtd-mini-card-amount" id="mtdDailyAvgAmount">$0</div>
+            </div>
+        </div>
     </main>
     <main class="view-station-mgmt" id="viewStationMgmt">
         <div class="station-view-actions">

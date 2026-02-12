@@ -109,9 +109,12 @@
     function showLoading() {
         document.getElementById('loading').style.display = 'block';
         document.getElementById('error').style.display = 'none';
-        document.getElementById('stations').style.display = 'none';
+        var stationsEl = document.getElementById('stations');
+        if (stationsEl) stationsEl.style.display = 'none';
         var card = document.getElementById('mtdChartCard');
         if (card) card.style.display = 'none';
+        var statsRow = document.getElementById('mtdStatsRow');
+        if (statsRow) statsRow.style.display = 'none';
         if (window.Charts && window.Charts.destroyMtdChart) window.Charts.destroyMtdChart();
         var bar = document.getElementById('summaryBar');
         if (bar) bar.style.display = 'none';
@@ -121,18 +124,22 @@
         document.getElementById('loading').style.display = 'none';
         document.getElementById('error').style.display = 'block';
         document.getElementById('error').textContent = msg;
-        document.getElementById('stations').style.display = 'none';
+        var stationsEl = document.getElementById('stations');
+        if (stationsEl) stationsEl.style.display = 'none';
         var card = document.getElementById('mtdChartCard');
         if (card) card.style.display = 'none';
+        var statsRow = document.getElementById('mtdStatsRow');
+        if (statsRow) statsRow.style.display = 'none';
         if (window.Charts && window.Charts.destroyMtdChart) window.Charts.destroyMtdChart();
         var bar = document.getElementById('summaryBar');
         if (bar) bar.style.display = 'none';
     }
 
-    function showStations() {
+    function showPerformanceView() {
         document.getElementById('loading').style.display = 'none';
         document.getElementById('error').style.display = 'none';
-        document.getElementById('stations').style.display = 'grid';
+        var stationsEl = document.getElementById('stations');
+        if (stationsEl) stationsEl.style.display = 'none';
         var bar = document.getElementById('summaryBar');
         if (bar) bar.style.display = 'flex';
     }
@@ -154,58 +161,20 @@
         const badge = document.getElementById('userBadge');
         badge.textContent = (user.username || 'User') + ' · ' + (user.type || 'USER');
 
-        const stations = user.stations;
-        if (!Array.isArray(stations) || stations.length === 0) {
-            showError('No stations assigned to your account.');
-            return;
-        }
-
         showLoading();
-        const { start, end } = getSelectedRange();
 
         try {
-            const results = await Promise.all(stations.map(async function (stationId) {
-                const [s, r] = await Promise.all([
-                    fetchStation(stationId).catch(function () { return null; }),
-                    fetchRents(stationId, start, end).catch(function () { return null; })
-                ]);
-                const stationData = (s && s.success && s.data) ? s.data : { id: stationId };
-                return { stationData, rentData: r };
-            }));
-
-            var totalRevenue = 0;
-            results.forEach(function (r) {
-                var rent = parseRentData(r.rentData);
-                if (rent) totalRevenue += rent.totalAmount;
-            });
-            var rate = takeHomeRate(user.type);
-            var takeHome = Math.round(totalRevenue * rate * 100) / 100;
-
-            var revEl = document.getElementById('summaryTotalRevenue');
-            var takeEl = document.getElementById('summaryTakeHome');
-            if (revEl) revEl.textContent = '$' + totalRevenue.toFixed(2);
-            if (takeEl) takeEl.textContent = '$' + takeHome.toFixed(2);
-
-            const container = document.getElementById('stations');
-            container.innerHTML = '';
-            results.forEach(function (r) {
-                container.appendChild(renderStationCard(r.stationData, r.rentData));
-            });
-
-            try {
-                var mtdRes = await fetchRentsMtd();
-                if (window.Charts && window.Charts.renderMtdChart) window.Charts.renderMtdChart(mtdRes);
-            } catch (mtdErr) {
-                console.warn('MTD rent data failed to load', mtdErr);
-                var mtdCard = document.getElementById('mtdChartCard');
+            var mtdRes = await fetchRentsMtd();
+            if (window.Charts && window.Charts.renderMtdChart) window.Charts.renderMtdChart(mtdRes);
+        } catch (mtdErr) {
+            console.warn('MTD rent data failed to load', mtdErr);
+            var mtdCard = document.getElementById('mtdChartCard');
                 if (mtdCard) mtdCard.style.display = 'none';
+                var mtdStatsRow = document.getElementById('mtdStatsRow');
+                if (mtdStatsRow) mtdStatsRow.style.display = 'none';
             }
 
-            showStations();
-        } catch (e) {
-            console.error(e);
-            showError('Failed to load dashboard. Please try again.');
-        }
+        showPerformanceView();
     }
 
     function isAdmin() {
