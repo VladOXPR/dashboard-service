@@ -246,6 +246,17 @@
         ['#DEA1EC', '#9118A7'],
         ['#FFD45B', '#D68909']
     ];
+    var SCANS_TYPE_TO_GRADIENT_INDEX = {
+        yellow: 3,
+        blue: 1,
+        purple: 2,
+        orange: 0
+    };
+    function getScansGradientIndexForType(typeName) {
+        if (typeName == null || typeName === '') return 0;
+        var key = String(typeName).toLowerCase().trim();
+        return SCANS_TYPE_TO_GRADIENT_INDEX[key] !== undefined ? SCANS_TYPE_TO_GRADIENT_INDEX[key] : 0;
+    }
 
     function renderScansSummary(scans) {
         var el = document.getElementById('scansSummary');
@@ -264,15 +275,21 @@
         var typeCounts = Object.keys(byType).map(function (t) { return { type: t, count: byType[t] }; });
         typeCounts.sort(function (a, b) { return b.count - a.count; });
 
+        var labels = typeCounts.map(function (x) { return x.type; });
+        var counts = typeCounts.map(function (x) { return x.count; });
+        window._scansTypeColor = {};
+        labels.forEach(function (type) {
+            var idx = getScansGradientIndexForType(type);
+            var c = SCANS_BAR_GRADIENTS[idx];
+            window._scansTypeColor[type] = c[0];
+        });
+
         destroyScansSummaryChart();
         el.innerHTML = '<div class="scans-summary-total"><span class="label">Total Scans</span><span class="value">' + total + '</span></div><div class="scans-summary-chart-wrap"><canvas id="scansSummaryChart" aria-label="Scans by type"></canvas><div id="scansSummaryChartTooltip" class="chart-tooltip-custom" aria-hidden="true"></div></div>';
         el.style.display = 'flex';
 
         var canvas = document.getElementById('scansSummaryChart');
         if (!canvas || typeCounts.length === 0) return;
-
-        var labels = typeCounts.map(function (x) { return x.type; });
-        var counts = typeCounts.map(function (x) { return x.count; });
 
         scansSummaryChartInstance = new window.Chart(canvas, {
             type: 'bar',
@@ -287,7 +304,9 @@
                         var chartArea = chart.chartArea;
                         if (!chartArea) return '#262626';
                         var i = context.dataIndex;
-                        var c = SCANS_BAR_GRADIENTS[i % SCANS_BAR_GRADIENTS.length];
+                        var typeName = labels[i];
+                        var idx = getScansGradientIndexForType(typeName);
+                        var c = SCANS_BAR_GRADIENTS[idx];
                         var g = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
                         g.addColorStop(0, c[0]);
                         g.addColorStop(1, c[1]);
@@ -316,9 +335,11 @@
                             var i = tp.dataPoints && tp.dataPoints[0] ? tp.dataPoints[0].dataIndex : 0;
                             var type = labels[i] || 'Unknown';
                             var count = counts[i] || 0;
+                            var colorIdx = getScansGradientIndexForType(type);
+                            var barColor = SCANS_BAR_GRADIENTS[colorIdx][0];
                             el.innerHTML =
                                 '<div class="chart-tooltip-header">' +
-                                '<span>' + type + '</span>' +
+                                '<span class="chart-tooltip-type-with-color"><span class="chart-tooltip-square" style="background:' + barColor + '"></span>' + escapeHtml(type) + '</span>' +
                                 '</div>' +
                                 '<div class="chart-tooltip-divider"></div>' +
                                 '<div class="chart-tooltip-body">' +
@@ -375,16 +396,20 @@
             container.innerHTML = '<p style="color: #a3a3a3;">No scans found.</p>';
             return;
         }
+        var typeColorMap = window._scansTypeColor || {};
         var html = '<table class="scans-table"><thead><tr><th>Scan ID</th><th>Sticker ID</th><th>Order ID</th><th>Scan time</th><th>Sticker type</th><th>Duration after rent</th><th>SIZL</th></tr></thead><tbody>';
         scans.forEach(function (s) {
             var scanId = escapeHtml(String(s.scan_id || ''));
             var stickerId = escapeHtml(String(s.sticker_id || ''));
             var orderId = escapeHtml(String(s.order_id || ''));
             var scanTime = escapeHtml(String(s.scan_time || ''));
-            var stickerType = escapeHtml(String(s.sticker_type || ''));
+            var stickerTypeRaw = String(s.sticker_type || '');
+            var stickerType = escapeHtml(stickerTypeRaw);
+            var typeColor = typeColorMap[stickerTypeRaw] || '#737373';
+            var typeCell = '<span class="scans-table-type"><span class="scans-table-type-dot" style="background:' + typeColor + '"></span>' + stickerType + '</span>';
             var duration = escapeHtml(formatDurationAfterRent(s.duration_after_rent));
             var sizl = s.sizl === true ? 'Yes' : 'No';
-            html += '<tr><td>' + scanId + '</td><td>' + stickerId + '</td><td>' + orderId + '</td><td>' + scanTime + '</td><td>' + stickerType + '</td><td>' + duration + '</td><td>' + sizl + '</td></tr>';
+            html += '<tr><td>' + scanId + '</td><td>' + stickerId + '</td><td>' + orderId + '</td><td>' + scanTime + '</td><td>' + typeCell + '</td><td>' + duration + '</td><td>' + sizl + '</td></tr>';
         });
         html += '</tbody></table>';
         container.innerHTML = html;
