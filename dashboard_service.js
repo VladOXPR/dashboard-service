@@ -62,11 +62,16 @@
         return api('/api/rents/' + encodeURIComponent(stationId) + '/' + range);
     }
 
-    async function fetchRentsMtd(stationId) {
-        if (stationId) {
-            return api('/api/rents/mtd/' + encodeURIComponent(stationId));
+    async function fetchRentsMtd(stationIdOrIds) {
+        if (stationIdOrIds == null) return api('/api/rents/mtd');
+        var pathSegment;
+        if (Array.isArray(stationIdOrIds)) {
+            if (stationIdOrIds.length === 0) return api('/api/rents/mtd');
+            pathSegment = stationIdOrIds.map(function (id) { return encodeURIComponent(id); }).join('.');
+        } else {
+            pathSegment = encodeURIComponent(stationIdOrIds);
         }
-        return api('/api/rents/mtd');
+        return api('/api/rents/mtd/' + pathSegment);
     }
 
     function parseRentData(data) {
@@ -170,12 +175,12 @@
         showLoading();
 
         try {
-            var stationId = null;
+            var stationIdOrIds = null;
             if (!isAdmin()) {
                 var stations = (user.stations && Array.isArray(user.stations)) ? user.stations : [];
-                if (stations.length > 0) stationId = stations[0];
+                if (stations.length > 0) stationIdOrIds = stations;
             }
-            var mtdRes = await fetchRentsMtd(stationId);
+            var mtdRes = await fetchRentsMtd(stationIdOrIds);
             if (window.Charts && window.Charts.renderMtdChart) window.Charts.renderMtdChart(mtdRes);
         } catch (mtdErr) {
             console.warn('MTD rent data failed to load', mtdErr);
