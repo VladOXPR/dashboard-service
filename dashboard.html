@@ -180,12 +180,31 @@
         }
         body.host-layout .side-panel { display: none; }
         body.host-layout .main-content { margin-left: 0; }
-        .header-logout {
-            font-size: 0.9rem;
-            color: #a3a3a3;
-            text-decoration: none;
+        .host-header {
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.75rem 1.5rem;
+            border-bottom: 1px solid #262626;
+            background: #000;
         }
-        .header-logout:hover { color: #e5e5e5; }
+        body.host-layout .host-header { display: flex; }
+        .host-header-brand {
+            display: flex;
+            align-items: center;
+        }
+        .host-header-logo {
+            height: 28px;
+            width: auto;
+        }
+        .host-header-username {
+            font-size: 0.95rem;
+            color: #a3a3a3;
+            margin-left: 1rem;
+        }
+        .host-header .logout {
+            width: auto;
+        }
         .date-range {
             display: flex;
             align-items: center;
@@ -1459,6 +1478,13 @@
             </div>
         </aside>
         <div class="main-content">
+            <header class="host-header" id="hostHeader" aria-label="Host navigation">
+                <div class="host-header-brand">
+                    <img src="CUUB_Logo.png" alt="CUUB" class="host-header-logo">
+                    <span class="host-header-username" id="hostHeaderUsername" aria-label="Logged in as"></span>
+                </div>
+                <a href="/login" class="logout" id="headerLogout" style="display: none;">Log out</a>
+            </header>
             <div class="main-scroll">
     <main class="view-performance" id="viewPerformance">
         <div class="loading" id="loading">Loading…</div>

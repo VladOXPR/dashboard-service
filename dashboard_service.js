@@ -62,7 +62,10 @@
         return api('/api/rents/' + encodeURIComponent(stationId) + '/' + range);
     }
 
-    async function fetchRentsMtd() {
+    async function fetchRentsMtd(stationId) {
+        if (stationId) {
+            return api('/api/rents/mtd/' + encodeURIComponent(stationId));
+        }
         return api('/api/rents/mtd');
     }
 
@@ -167,7 +170,12 @@
         showLoading();
 
         try {
-            var mtdRes = await fetchRentsMtd();
+            var stationId = null;
+            if (!isAdmin()) {
+                var stations = (user.stations && Array.isArray(user.stations)) ? user.stations : [];
+                if (stations.length > 0) stationId = stations[0];
+            }
+            var mtdRes = await fetchRentsMtd(stationId);
             if (window.Charts && window.Charts.renderMtdChart) window.Charts.renderMtdChart(mtdRes);
         } catch (mtdErr) {
             console.warn('MTD rent data failed to load', mtdErr);
@@ -241,7 +249,7 @@
     }
 
     var SCANS_BAR_GRADIENTS = [
-        ['#FDDA7B', '#EB641D'],
+        ['#EB641D', '#EB641D'],
         ['#23B3FA', '#1F65E0'],
         ['#DEA1EC', '#9118A7'],
         ['#FFD45B', '#D68909']
@@ -871,6 +879,9 @@
         });
         if (!isAdmin()) {
             document.body.classList.add('host-layout');
+            var user = getUser();
+            var hostUsernameEl = document.getElementById('hostHeaderUsername');
+            if (hostUsernameEl) hostUsernameEl.textContent = user && user.username ? user.username : '';
             var headerLogout = document.getElementById('headerLogout');
             if (headerLogout) {
                 headerLogout.style.display = 'block';
