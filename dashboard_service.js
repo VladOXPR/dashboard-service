@@ -74,6 +74,10 @@
         return api('/api/rents/mtd/' + pathSegment);
     }
 
+    async function fetchRentsMtdAll() {
+        return api('/api/rents/mtd/all');
+    }
+
     function parseRentData(data) {
         if (!data || !data.success) return null;
         const d = data.data;
@@ -128,6 +132,8 @@
         if (window.Charts && window.Charts.destroyMtdChart) window.Charts.destroyMtdChart();
         var bar = document.getElementById('summaryBar');
         if (bar) bar.style.display = 'none';
+        var stationPerf = document.getElementById('stationPerformanceSection');
+        if (stationPerf) stationPerf.style.display = 'none';
     }
 
     function showError(msg) {
@@ -145,6 +151,8 @@
         if (window.Charts && window.Charts.destroyMtdChart) window.Charts.destroyMtdChart();
         var bar = document.getElementById('summaryBar');
         if (bar) bar.style.display = 'none';
+        var stationPerf = document.getElementById('stationPerformanceSection');
+        if (stationPerf) stationPerf.style.display = 'none';
     }
 
     function showPerformanceView() {
@@ -156,6 +164,27 @@
         if (stationsEl) stationsEl.style.display = 'none';
         var bar = document.getElementById('summaryBar');
         if (bar) bar.style.display = 'flex';
+    }
+
+    function renderStationPerformanceList(res) {
+        var section = document.getElementById('stationPerformanceSection');
+        var container = document.getElementById('stationPerformanceList');
+        var titleEl = document.getElementById('stationPerformanceTitle');
+        if (!section || !container) return;
+        if (!res || !res.success || !Array.isArray(res.data) || res.data.length === 0) {
+            section.style.display = 'none';
+            return;
+        }
+        if (titleEl && res.mtd) titleEl.textContent = 'Station performance — ' + res.mtd;
+        var html = '<table class="station-performance-table" aria-label="Station MTD revenue"><thead><tr><th>Station</th><th>MTD revenue</th></tr></thead><tbody>';
+        res.data.forEach(function (row) {
+            var title = escapeHtml(String(row.station_title || row.station_id || '—'));
+            var money = row.money != null ? Number(row.money) : 0;
+            html += '<tr><td>' + title + '</td><td class="station-performance-money">$' + money + '</td></tr>';
+        });
+        html += '</tbody></table>';
+        container.innerHTML = html;
+        section.style.display = 'block';
     }
 
     function takeHomeRate(userType) {
@@ -191,6 +220,17 @@
             }
 
         showPerformanceView();
+
+        if (isAdmin()) {
+            try {
+                var allRes = await fetchRentsMtdAll();
+                renderStationPerformanceList(allRes);
+            } catch (allErr) {
+                console.warn('Station performance (mtd/all) failed to load', allErr);
+                var stationPerf = document.getElementById('stationPerformanceSection');
+                if (stationPerf) stationPerf.style.display = 'none';
+            }
+        }
     }
 
     function isAdmin() {
