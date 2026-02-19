@@ -463,19 +463,21 @@
         .station-performance-section {
             margin-top: 1.5rem;
         }
-        .station-performance-section .section-title {
-            font-size: 1.1rem;
-            font-weight: 600;
-            margin-bottom: 0.75rem;
-            color: #e5e5e5;
+        .station-performance-card {
+            background: #000;
+            border: 1px solid #262626;
+            border-radius: 12px;
+            padding: 1.25rem;
+            margin-bottom: 1.5rem;
+        }
+        .station-performance-card .skeleton-table-wrap {
+            border: none;
+            border-radius: 0;
         }
         .station-performance-table {
             width: 100%;
             border-collapse: collapse;
             background: #000;
-            border-radius: 12px;
-            overflow: hidden;
-            border: 1px solid #262626;
         }
         .station-performance-table th,
         .station-performance-table td {
@@ -1561,8 +1563,33 @@
             </div>
         </div>
         <section class="station-performance-section" id="stationPerformanceSection" style="display: none;">
-            <h2 class="section-title" id="stationPerformanceTitle">Station performance</h2>
-            <div id="stationPerformanceList"></div>
+            <div class="station-performance-card">
+                <div class="skeleton-table-wrap" id="stationPerformanceSkeletons" style="display: none;">
+                    <div class="skeleton-table">
+                        <div class="skeleton-table-row" aria-hidden="true">
+                            <div class="skeleton skeleton-cell skeleton-cell-flex"></div>
+                            <div class="skeleton skeleton-cell skeleton-cell-w20"></div>
+                        </div>
+                        <div class="skeleton-table-row" aria-hidden="true">
+                            <div class="skeleton skeleton-cell skeleton-cell-flex"></div>
+                            <div class="skeleton skeleton-cell skeleton-cell-w20"></div>
+                        </div>
+                        <div class="skeleton-table-row" aria-hidden="true">
+                            <div class="skeleton skeleton-cell skeleton-cell-flex"></div>
+                            <div class="skeleton skeleton-cell skeleton-cell-w20"></div>
+                        </div>
+                        <div class="skeleton-table-row" aria-hidden="true">
+                            <div class="skeleton skeleton-cell skeleton-cell-flex"></div>
+                            <div class="skeleton skeleton-cell skeleton-cell-w20"></div>
+                        </div>
+                        <div class="skeleton-table-row" aria-hidden="true">
+                            <div class="skeleton skeleton-cell skeleton-cell-flex"></div>
+                            <div class="skeleton skeleton-cell skeleton-cell-w20"></div>
+                        </div>
+                    </div>
+                </div>
+                <div id="stationPerformanceList"></div>
+            </div>
         </section>
     </main>
     <main class="view-station-mgmt" id="viewStationMgmt">

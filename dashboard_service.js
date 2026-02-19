@@ -133,7 +133,14 @@
         var bar = document.getElementById('summaryBar');
         if (bar) bar.style.display = 'none';
         var stationPerf = document.getElementById('stationPerformanceSection');
-        if (stationPerf) stationPerf.style.display = 'none';
+        var stationPerfSkeletons = document.getElementById('stationPerformanceSkeletons');
+        if (isAdmin()) {
+            if (stationPerf) stationPerf.style.display = 'block';
+            if (stationPerfSkeletons) stationPerfSkeletons.style.display = 'block';
+        } else {
+            if (stationPerf) stationPerf.style.display = 'none';
+            if (stationPerfSkeletons) stationPerfSkeletons.style.display = 'none';
+        }
     }
 
     function showError(msg) {
@@ -169,13 +176,13 @@
     function renderStationPerformanceList(res) {
         var section = document.getElementById('stationPerformanceSection');
         var container = document.getElementById('stationPerformanceList');
-        var titleEl = document.getElementById('stationPerformanceTitle');
+        var skeletons = document.getElementById('stationPerformanceSkeletons');
         if (!section || !container) return;
+        if (skeletons) skeletons.style.display = 'none';
         if (!res || !res.success || !Array.isArray(res.data) || res.data.length === 0) {
             section.style.display = 'none';
             return;
         }
-        if (titleEl && res.mtd) titleEl.textContent = 'Station performance — ' + res.mtd;
         var html = '<table class="station-performance-table" aria-label="Station MTD revenue"><thead><tr><th>Station</th><th>MTD revenue</th></tr></thead><tbody>';
         res.data.forEach(function (row) {
             var title = escapeHtml(String(row.station_title || row.station_id || '—'));
@@ -222,13 +229,17 @@
         showPerformanceView();
 
         if (isAdmin()) {
+            var stationPerf = document.getElementById('stationPerformanceSection');
+            var stationPerfSkeletons = document.getElementById('stationPerformanceSkeletons');
+            if (stationPerf) stationPerf.style.display = 'block';
+            if (stationPerfSkeletons) stationPerfSkeletons.style.display = 'block';
             try {
                 var allRes = await fetchRentsMtdAll();
                 renderStationPerformanceList(allRes);
             } catch (allErr) {
                 console.warn('Station performance (mtd/all) failed to load', allErr);
-                var stationPerf = document.getElementById('stationPerformanceSection');
                 if (stationPerf) stationPerf.style.display = 'none';
+                if (stationPerfSkeletons) stationPerfSkeletons.style.display = 'none';
             }
         }
     }
