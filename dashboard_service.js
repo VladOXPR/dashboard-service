@@ -22,6 +22,12 @@
         return s + '_' + e;
     }
 
+    function getMtdDateRange() {
+        var end = new Date();
+        var start = new Date(end.getFullYear(), end.getMonth(), 1);
+        return { start: start, end: end };
+    }
+
     function setDefaultDates() {
         var startEl = document.getElementById('startDate');
         var endEl = document.getElementById('endDate');
@@ -63,19 +69,22 @@
     }
 
     async function fetchRentsMtd(stationIdOrIds) {
-        if (stationIdOrIds == null) return api('/api/rents/mtd');
+        var range = formatDateRange(getMtdDateRange().start, getMtdDateRange().end);
+        var basePath = '/api/rents/' + range;
+        if (stationIdOrIds == null) return api(basePath);
         var pathSegment;
         if (Array.isArray(stationIdOrIds)) {
-            if (stationIdOrIds.length === 0) return api('/api/rents/mtd');
+            if (stationIdOrIds.length === 0) return api(basePath);
             pathSegment = stationIdOrIds.map(function (id) { return encodeURIComponent(id); }).join('.');
         } else {
             pathSegment = encodeURIComponent(stationIdOrIds);
         }
-        return api('/api/rents/mtd/' + pathSegment);
+        return api(basePath + '/' + pathSegment);
     }
 
     async function fetchRentsMtdAll() {
-        return api('/api/rents/mtd/all');
+        var range = formatDateRange(getMtdDateRange().start, getMtdDateRange().end);
+        return api('/api/rents/' + range + '/all');
     }
 
     function parseRentData(data) {

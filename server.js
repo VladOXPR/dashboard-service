@@ -70,10 +70,11 @@ app.patch('/api/stations/:id', (req, res) => {
     proxyToCuub(`/stations/${req.params.id}`, res, { method: 'PATCH', body: JSON.stringify(req.body || {}) });
 });
 app.delete('/api/stations/:id', (req, res) => proxyToCuub(`/stations/${req.params.id}`, res, { method: 'DELETE' }));
-app.get('/api/rents/mtd', (req, res) => proxyToCuub('/rents/mtd', res));
-app.get('/api/rents/:stationId/:dateRange', (req, res) => {
-    proxyToCuub(`/rents/${req.params.stationId}/${req.params.dateRange}`, res);
+app.get('/api/rents/:dateRange/all', (req, res) => proxyToCuub(`/rents/${req.params.dateRange}/all`, res));
+app.get('/api/rents/:dateRange/:stationIds', (req, res) => {
+    proxyToCuub(`/rents/${req.params.dateRange}/${req.params.stationIds}`, res);
 });
+app.get('/api/rents/:dateRange', (req, res) => proxyToCuub(`/rents/${req.params.dateRange}`, res));
 app.get('/api/scans', (req, res) => proxyToCuub('/scans/', res));
 
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'login.html')));
