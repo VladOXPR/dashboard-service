@@ -59,14 +59,48 @@
         if (dailyAvgTitleEl) dailyAvgTitleEl.textContent = monthNames[now.getMonth()] + ' daily average';
         if (dailyAvgAmountEl) dailyAvgAmountEl.textContent = '$' + dailyAvg;
 
+        function parseMtdDate(dStr) {
+            if (!dStr || typeof dStr !== 'string') return new Date(0);
+            dStr = dStr.trim();
+            var isoMatch = /^(\d{4})-(\d{1,2})-(\d{1,2})/.exec(dStr);
+            if (isoMatch) {
+                var y = parseInt(isoMatch[1], 10);
+                var m = parseInt(isoMatch[2], 10) - 1;
+                var d = parseInt(isoMatch[3], 10);
+                return new Date(y, m, d);
+            }
+            var comma = dStr.indexOf(',');
+            var firstPart = comma > 0 ? dStr.slice(0, comma).trim() : dStr;
+            var yearPart = comma > 0 ? dStr.slice(comma + 1).trim() : '';
+            var year = yearPart ? parseInt(yearPart, 10) : now.getFullYear();
+            var spaceIdx = firstPart.indexOf(' ');
+            var monthStr = spaceIdx > 0 ? firstPart.slice(0, spaceIdx).trim() : '';
+            var day = spaceIdx > 0 ? parseInt(firstPart.slice(spaceIdx + 1).trim(), 10) : 1;
+            var monthIndex = shortMonths.indexOf(monthStr);
+            if (monthIndex < 0) monthIndex = now.getMonth();
+            return new Date(year, monthIndex, day);
+        }
+        data = data.slice().sort(function (a, b) {
+            return parseMtdDate(a.date).getTime() - parseMtdDate(b.date).getTime();
+        });
+
         destroyMtdChart();
         var labels = data.map(function (d) {
             var dStr = (d.date || '').trim();
+            if (/^\d{4}-\d{1,2}-\d{1,2}/.test(dStr)) {
+                var parsed = parseMtdDate(dStr);
+                return shortMonths[parsed.getMonth()] + ' ' + parsed.getDate();
+            }
             var comma = dStr.indexOf(',');
             return comma > 0 ? dStr.slice(0, comma).trim() : dStr;
         });
-        var rents = data.map(function (d) { return d.rents != null ? d.rents : 0; });
-        var prents = data.map(function (d) { return d.prents != null ? d.prents : 0; });
+        function parseMoney(v) {
+            if (v == null || v === '') return 0;
+            var num = parseFloat(String(v).replace(/[$,]/g, ''), 10);
+            return isNaN(num) ? 0 : num;
+        }
+        var moneyValues = data.map(function (d) { return parseMoney(d.money); });
+        var pmoneyValues = data.map(function (d) { return parseMoney(d.pmoney); });
         var ctx = canvas.getContext('2d');
         var gradient = ctx.createLinearGradient(0, 0, 0, 240);
         gradient.addColorStop(0, 'rgba(0, 153, 255, 0.35)');
@@ -105,7 +139,7 @@
                 datasets: [
                     {
                         label: 'Rents',
-                        data: rents,
+                        data: moneyValues,
                         borderColor: '#0099FF',
                         backgroundColor: gradient,
                         fill: true,
@@ -118,7 +152,7 @@
                     },
                     {
                         label: 'Previous month',
-                        data: prents,
+                        data: pmoneyValues,
                         borderColor: grey,
                         backgroundColor: 'transparent',
                         fill: false,
