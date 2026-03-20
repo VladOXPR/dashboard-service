@@ -665,8 +665,10 @@
         });
         container.querySelectorAll('.btn-dispense-all').forEach(function (btn) {
             btn.addEventListener('click', function () {
+                var row = btn.closest('tr');
                 var sid = btn && btn.getAttribute ? btn.getAttribute('data-station-id') : null;
-                dispenseAllForStation(sid, btn);
+                var stationName = (row && row.getAttribute('data-station-title')) || sid || 'this station';
+                openDispenseConfirmModal(sid, stationName);
             });
         });
     }
@@ -810,6 +812,22 @@
         modal.classList.remove('active');
         modal.removeAttribute('data-delete-id');
         modal.removeAttribute('data-delete-type');
+    }
+
+    function openDispenseConfirmModal(stationId, stationName) {
+        var modal = document.getElementById('dispenseConfirmModal');
+        var msg = document.getElementById('dispenseConfirmMessage');
+        if (!modal || !msg || !stationId) return;
+        msg.textContent = 'Are you sure you want to dispense all batteries at "' + (stationName || stationId) + '"?';
+        modal.setAttribute('data-station-id', stationId);
+        modal.classList.add('active');
+    }
+
+    function closeDispenseConfirmModal() {
+        var modal = document.getElementById('dispenseConfirmModal');
+        if (!modal) return;
+        modal.classList.remove('active');
+        modal.removeAttribute('data-station-id');
     }
 
     function openAddUserModal() {
@@ -1116,6 +1134,23 @@
         });
         document.getElementById('deleteConfirmModal').addEventListener('click', function (e) {
             if (e.target === this) closeDeleteConfirmModal();
+        });
+        document.getElementById('dispenseConfirmCancel').addEventListener('click', closeDispenseConfirmModal);
+        document.getElementById('dispenseConfirmBtn').addEventListener('click', async function () {
+            var modal = document.getElementById('dispenseConfirmModal');
+            var sid = modal.getAttribute('data-station-id');
+            if (!sid) return;
+            var btn = document.getElementById('dispenseConfirmBtn');
+            btn.disabled = true;
+            closeDispenseConfirmModal();
+            try {
+                await dispenseAllForStation(sid);
+            } finally {
+                btn.disabled = false;
+            }
+        });
+        document.getElementById('dispenseConfirmModal').addEventListener('click', function (e) {
+            if (e.target === this) closeDispenseConfirmModal();
         });
 
         loadDashboard();
