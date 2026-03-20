@@ -76,6 +76,9 @@ app.get('/api/rents/:dateRange/:stationIds', (req, res) => {
 });
 app.get('/api/rents/:dateRange', (req, res) => proxyToCuub(`/rents/${req.params.dateRange}`, res));
 app.get('/api/scans', (req, res) => proxyToCuub('/scans/', res));
+app.post('/api/pop/:stationId/all', (req, res) => {
+    proxyToCuub(`/pop/${req.params.stationId}/all`, res, { method: 'POST' });
+});
 
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'login.html')));
 app.get('/login', (req, res) => res.sendFile(path.join(__dirname, 'login.html')));

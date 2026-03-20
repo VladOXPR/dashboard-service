@@ -579,6 +579,40 @@
         return json;
     }
 
+    function showStationMgmtError(msg) {
+        var errEl = document.getElementById('mgmtError');
+        if (!errEl) return;
+        errEl.style.display = 'block';
+        errEl.textContent = msg;
+        errEl.style.color = '#fca5a5';
+    }
+
+    async function dispenseAllForStation(stationId, buttonEl) {
+        var errEl = document.getElementById('mgmtError');
+        if (errEl) {
+            errEl.style.display = 'none';
+            errEl.textContent = '';
+        }
+        if (!stationId) {
+            showStationMgmtError('Missing station ID.');
+            return;
+        }
+        if (buttonEl) buttonEl.disabled = true;
+        try {
+            var res = await fetch('/api/pop/' + encodeURIComponent(stationId) + '/all', { method: 'POST' });
+            var json = await res.json().catch(function () { return {}; });
+            if (!res.ok || (json && json.success === false)) {
+                throw new Error((json && (json.error || json.message)) ? (json.error || json.message) : 'Failed to dispense powerbanks.');
+            }
+            await loadStationManagement();
+        } catch (e) {
+            console.error(e);
+            showStationMgmtError((e && e.message) ? e.message : 'Failed to dispense powerbanks. Please try again.');
+        } finally {
+            if (buttonEl) buttonEl.disabled = false;
+        }
+    }
+
     function renderStationManagementList(stations) {
         var container = document.getElementById('stationMgmtList');
         var loading = document.getElementById('mgmtLoading');
@@ -592,7 +626,7 @@
             container.innerHTML = '<p style="color: #a3a3a3;">No stations found.</p>';
             return;
         }
-        var html = '<table class="station-mgmt-table"><thead><tr><th></th><th>Title</th><th>ID</th><th>Filled</th><th>Open</th><th></th></tr></thead><tbody>';
+        var html = '<table class="station-mgmt-table"><thead><tr><th></th><th>Title</th><th></th><th>ID</th><th>Filled</th><th>Open</th><th></th></tr></thead><tbody>';
         stations.forEach(function (s) {
             var id = escapeHtml(String(s.id || ''));
             var title = escapeHtml(String(s.title || ''));
@@ -604,7 +638,13 @@
             var statusClass = isOnline ? 'online' : 'offline';
             var statusDot = '<span class="station-status-dot ' + statusClass + '" aria-label="' + (isOnline ? 'Online' : 'Offline') + '"></span>';
             html += '<tr data-station-id="' + id + '" data-station-title="' + escapeHtml(String(s.title || '')) + '" data-station-lat="' + escapeHtml(lat) + '" data-station-lng="' + escapeHtml(lng) + '">' +
-                '<td class="station-status-cell">' + statusDot + '</td><td>' + title + '</td><td>' + id + '</td><td>' + filled + '</td><td>' + open + '</td>' +
+                '<td class="station-status-cell">' + statusDot + '</td><td>' + title + '</td>' +
+                '<td>' +
+                    '<button type="button" class="btn-dispense-all" data-action="dispense-all" data-station-id="' + id + '" aria-label="Dispense all powerbanks for station">' +
+                        '<img src="assets/dispense-all.png" alt="" />' +
+                    '</button>' +
+                '</td>' +
+                '<td>' + id + '</td><td>' + filled + '</td><td>' + open + '</td>' +
                 '<td><div class="table-actions"><button type="button" class="btn-edit" data-action="edit">Edit</button><button type="button" class="btn-delete" data-action="delete">Delete</button></div></td></tr>';
         });
         html += '</tbody></table>';
@@ -621,6 +661,12 @@
                 var row = btn.closest('tr');
                 var sid = row && row.getAttribute('data-station-id');
                 if (sid) openDeleteConfirmModal('station', sid, row);
+            });
+        });
+        container.querySelectorAll('.btn-dispense-all').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var sid = btn && btn.getAttribute ? btn.getAttribute('data-station-id') : null;
+                dispenseAllForStation(sid, btn);
             });
         });
     }
