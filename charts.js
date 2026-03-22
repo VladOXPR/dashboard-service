@@ -10,7 +10,19 @@
         }
     }
 
-    function renderMtdChart(mtdPayload) {
+    function renderMtdChart(mtdPayload, opts) {
+        opts = opts || {};
+        var rangeStart = opts.start;
+        var rangeEnd = opts.end;
+        if (!rangeStart || !rangeEnd) {
+            var endD = new Date();
+            rangeStart = new Date(endD.getFullYear(), endD.getMonth(), 1);
+            rangeEnd = endD;
+        }
+        function dayOnly(d) {
+            return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+        }
+
         var card = document.getElementById('mtdChartCard');
         var titleEl = document.getElementById('mtdChartTitle');
         var descEl = document.getElementById('mtdChartDescription');
@@ -31,8 +43,8 @@
         var pct = (ref === 0) ? 0 : ((totalMoney - ref) / Math.abs(ref)) * 100;
         var pctStr = (pct >= 0 ? '+' : '') + pct.toFixed(2) + '%';
         var pctClass = pct >= 0 ? 'mtd-chart-pct-positive' : 'mtd-chart-pct-negative';
-        if (titleEl) titleEl.innerHTML = 'Month to date<div class="mtd-chart-amount-wrap"><span class="mtd-chart-amount">$' + totalMoney.toFixed(0) + '</span><span class="mtd-chart-pct ' + pctClass + '">' + pctStr + '</span></div>';
-        descEl.textContent = mtdPayload.mtd || 'Month to date';
+        if (titleEl) titleEl.innerHTML = 'Revenue<div class="mtd-chart-amount-wrap"><span class="mtd-chart-amount">$' + totalMoney.toFixed(0) + '</span><span class="mtd-chart-pct ' + pctClass + '">' + pctStr + '</span></div>';
+        descEl.textContent = mtdPayload.range || mtdPayload.mtd || '';
         card.style.display = 'block';
 
         var statsRow = document.getElementById('mtdStatsRow');
@@ -45,8 +57,12 @@
         var shortMonths = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
         var now = new Date();
         var todayStr = shortMonths[now.getMonth()] + ' ' + now.getDate() + ', ' + now.getFullYear();
-        var todayRow = data.filter(function (d) { return (d.date || '').trim() === todayStr; })[0];
-        var todayMoney = todayRow && todayRow.money != null ? todayRow.money : '$0';
+        var todayD = dayOnly(now);
+        var rs = dayOnly(rangeStart);
+        var re = dayOnly(rangeEnd);
+        var todayInRange = todayD >= rs && todayD <= re;
+        var todayRow = todayInRange ? data.filter(function (d) { return (d.date || '').trim() === todayStr; })[0] : null;
+        var todayMoney = todayInRange && todayRow && todayRow.money != null ? todayRow.money : (todayInRange ? '$0' : '—');
         if (todayAmountEl) todayAmountEl.textContent = todayMoney;
 
         var sum = data.reduce(function (s, d) {
@@ -56,7 +72,8 @@
             return s + (isNaN(num) ? 0 : num);
         }, 0);
         var dailyAvg = data.length > 0 ? Math.round(sum / data.length) : 0;
-        if (dailyAvgTitleEl) dailyAvgTitleEl.textContent = monthNames[now.getMonth()] + ' daily average';
+        var sameMonth = rangeStart.getFullYear() === rangeEnd.getFullYear() && rangeStart.getMonth() === rangeEnd.getMonth();
+        if (dailyAvgTitleEl) dailyAvgTitleEl.textContent = sameMonth ? (monthNames[rangeStart.getMonth()] + ' daily average') : 'Period daily average';
         if (dailyAvgAmountEl) dailyAvgAmountEl.textContent = '$' + dailyAvg;
 
         function parseMtdDate(dStr) {

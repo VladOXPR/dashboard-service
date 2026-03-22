@@ -22,34 +22,10 @@
         return s + '_' + e;
     }
 
-    function getMtdDateRange() {
-        var end = new Date();
-        var start = new Date(end.getFullYear(), end.getMonth(), 1);
-        return { start: start, end: end };
-    }
-
-    function setDefaultDates() {
-        var startEl = document.getElementById('startDate');
-        var endEl = document.getElementById('endDate');
-        if (!startEl || !endEl) return;
-        var end = new Date();
-        var start = new Date(end);
-        start.setDate(1);
-        startEl.value = start.toISOString().slice(0, 10);
-        endEl.value = end.toISOString().slice(0, 10);
-    }
-
-    function getSelectedRange() {
-        var startEl = document.getElementById('startDate');
-        var endEl = document.getElementById('endDate');
-        var end = new Date();
-        var start = new Date(end);
-        start.setDate(1);
-        if (startEl && endEl) {
-            start = new Date(startEl.value || start.toISOString().slice(0, 10));
-            end = new Date(endEl.value || end.toISOString().slice(0, 10));
-        }
-        return { start: start, end: end };
+    function getPerformanceDateRangeModule() {
+        return window.PerformanceDateRange && window.PerformanceDateRange.getModule
+            ? window.PerformanceDateRange.getModule()
+            : null;
     }
 
     async function api(path) {
@@ -69,7 +45,8 @@
     }
 
     async function fetchRentsMtd(stationIdOrIds) {
-        var range = formatDateRange(getMtdDateRange().start, getMtdDateRange().end);
+        var sel = window.PerformanceDateRange.getSelectedRange();
+        var range = formatDateRange(sel.start, sel.end);
         var basePath = '/api/rents/' + range;
         if (stationIdOrIds == null) return api(basePath);
         var pathSegment;
@@ -83,7 +60,8 @@
     }
 
     async function fetchRentsMtdAll() {
-        var range = formatDateRange(getMtdDateRange().start, getMtdDateRange().end);
+        var sel = window.PerformanceDateRange.getSelectedRange();
+        var range = formatDateRange(sel.start, sel.end);
         return api('/api/rents/' + range + '/all');
     }
 
@@ -139,8 +117,8 @@
         var statsRow = document.getElementById('mtdStatsRow');
         if (statsRow) statsRow.style.display = 'none';
         if (window.Charts && window.Charts.destroyMtdChart) window.Charts.destroyMtdChart();
-        var bar = document.getElementById('summaryBar');
-        if (bar) bar.style.display = 'none';
+        var drm = getPerformanceDateRangeModule();
+        if (drm) drm.style.display = 'block';
         var stationPerf = document.getElementById('stationPerformanceSection');
         var stationPerfSkeletons = document.getElementById('stationPerformanceSkeletons');
         if (isAdmin()) {
@@ -165,8 +143,8 @@
         var statsRow = document.getElementById('mtdStatsRow');
         if (statsRow) statsRow.style.display = 'none';
         if (window.Charts && window.Charts.destroyMtdChart) window.Charts.destroyMtdChart();
-        var bar = document.getElementById('summaryBar');
-        if (bar) bar.style.display = 'none';
+        var drm = getPerformanceDateRangeModule();
+        if (drm) drm.style.display = 'block';
         var stationPerf = document.getElementById('stationPerformanceSection');
         if (stationPerf) stationPerf.style.display = 'none';
     }
@@ -178,8 +156,8 @@
         document.getElementById('error').style.display = 'none';
         var stationsEl = document.getElementById('stations');
         if (stationsEl) stationsEl.style.display = 'none';
-        var bar = document.getElementById('summaryBar');
-        if (bar) bar.style.display = 'flex';
+        var drm = getPerformanceDateRangeModule();
+        if (drm) drm.style.display = 'block';
     }
 
     function renderStationPerformanceList(res) {
@@ -192,7 +170,7 @@
             section.style.display = 'none';
             return;
         }
-        var html = '<table class="station-performance-table" aria-label="Station MTD revenue"><thead><tr><th>Station</th><th>MTD revenue</th></tr></thead><tbody>';
+        var html = '<table class="station-performance-table" aria-label="Station revenue for selected range"><thead><tr><th>Station</th><th>Revenue</th></tr></thead><tbody>';
         res.data.forEach(function (row) {
             var title = escapeHtml(String(row.station_title || row.station_id || '—'));
             var money = row.money != null ? Number(row.money) : 0;
@@ -219,6 +197,20 @@
 
         showLoading();
 
+        var rangeCheck = window.PerformanceDateRange.validate();
+        if (!rangeCheck.ok) {
+            document.getElementById('loading').style.display = 'none';
+            var sk = document.getElementById('performanceSkeletons');
+            if (sk) sk.style.display = 'none';
+            var errEl = document.getElementById('error');
+            errEl.style.display = 'block';
+            errEl.textContent = rangeCheck.message;
+            var drm = getPerformanceDateRangeModule();
+            if (drm) drm.style.display = 'block';
+            return;
+        }
+        var chartRange = { start: rangeCheck.start, end: rangeCheck.end };
+
         try {
             var stationIdOrIds = null;
             if (!isAdmin()) {
@@ -226,7 +218,7 @@
                 if (stations.length > 0) stationIdOrIds = stations;
             }
             var mtdRes = await fetchRentsMtd(stationIdOrIds);
-            if (window.Charts && window.Charts.renderMtdChart) window.Charts.renderMtdChart(mtdRes);
+            if (window.Charts && window.Charts.renderMtdChart) window.Charts.renderMtdChart(mtdRes, chartRange);
         } catch (mtdErr) {
             console.warn('MTD rent data failed to load', mtdErr);
             var mtdCard = document.getElementById('mtdChartCard');
@@ -966,9 +958,9 @@
     }
 
     function init() {
-        setDefaultDates();
-        var applyBtn = document.getElementById('applyDates');
-        if (applyBtn) applyBtn.addEventListener('click', loadDashboard);
+        if (window.PerformanceDateRange) {
+            window.PerformanceDateRange.init(loadDashboard);
+        }
         var hamburgerBtn = document.getElementById('hamburgerBtn');
         var hamburgerMenu = document.getElementById('hamburgerMenu');
         var hamburgerOverlay = document.getElementById('hamburgerOverlay');

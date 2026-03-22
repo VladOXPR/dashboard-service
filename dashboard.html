@@ -247,6 +247,25 @@
             align-items: center;
             gap: 1.5rem 2rem;
         }
+        /* Date range module — sits directly above the Revenue chart */
+        .performance-date-range-module {
+            background: #000;
+            border: 1px solid #262626;
+            border-radius: 12px;
+            padding: 1rem 1.25rem;
+            margin-bottom: 1rem;
+        }
+        .performance-date-range-module .performance-module-heading {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #a3a3a3;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            margin: 0 0 0.75rem 0;
+        }
+        .performance-date-range-module .date-range {
+            margin: 0;
+        }
         .summary-item {
             display: flex;
             align-items: baseline;
@@ -1569,11 +1588,23 @@
             </div>
         </div>
         <div class="error" id="error" style="display: none;"></div>
+        <!-- Date range module (above Revenue graph) -->
+        <section class="performance-date-range-module" id="performanceDateRangeModule" aria-label="Date range for performance">
+            <h3 class="performance-module-heading">Date range</h3>
+            <div class="date-range" role="group" aria-label="Performance date range">
+                <span class="summary-label">From</span>
+                <input type="date" id="startDate" name="startDate" aria-label="Start date">
+                <span class="date-range-arrow" aria-hidden="true">→</span>
+                <span class="summary-label">To</span>
+                <input type="date" id="endDate" name="endDate" aria-label="End date">
+                <button type="button" id="applyDates">Apply</button>
+            </div>
+        </section>
         <div class="mtd-chart-card" id="mtdChartCard" style="display: none;">
             <div class="mtd-chart-title" id="mtdChartTitle"></div>
             <div class="mtd-chart-description" id="mtdChartDescription"></div>
             <div class="mtd-chart-canvas-wrap">
-                <canvas id="mtdChartCanvas" aria-label="Month to date rents chart"></canvas>
+                <canvas id="mtdChartCanvas" aria-label="Revenue chart"></canvas>
                 <div id="mtdChartTooltip" class="chart-tooltip-custom" aria-hidden="true"></div>
             </div>
         </div>
@@ -1855,6 +1886,7 @@
     </div>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script src="charts.js"></script>
+    <script src="performance_date_range.js"></script>
     <script src="dashboard_service.js"></script>
 </body>
 </html>
