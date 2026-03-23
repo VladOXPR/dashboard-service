@@ -188,6 +188,59 @@
         return 0.2;
     }
 
+    function isTestStationTitle(title) {
+        return String(title || '').trim().toLowerCase() === 'test station';
+    }
+
+    /** Count of user.stations after excluding stations whose title is "TEST STATION" (from /api/stations). */
+    async function countUserStationsExcludingTestStations(user) {
+        var ids = (user.stations && Array.isArray(user.stations)) ? user.stations : [];
+        if (ids.length === 0) return 0;
+        try {
+            var json = await fetchAllStations();
+            var list = (json.data != null && Array.isArray(json.data)) ? json.data : [];
+            var testIds = new Set();
+            list.forEach(function (s) {
+                if (isTestStationTitle(s.title)) testIds.add(String(s.id));
+            });
+            return ids.filter(function (id) { return !testIds.has(String(id)); }).length;
+        } catch (e) {
+            return ids.length;
+        }
+    }
+
+    /**
+     * Average revenue per station for the selected period.
+     * Admin: from /rents/range/all (stations with activity in range), excluding "TEST STATION".
+     * Non-admin: chart total divided by hostDenominator (stations minus TEST STATION).
+     */
+    function computeAvgRevenuePerStation(user, mtdRes, allRes, hostDenominator) {
+        if (!mtdRes || !mtdRes.success || !Array.isArray(mtdRes.data)) return null;
+        if (isAdmin()) {
+            if (allRes && allRes.success && Array.isArray(allRes.data) && allRes.data.length > 0) {
+                var rows = allRes.data.filter(function (r) { return !isTestStationTitle(r.station_title); });
+                if (rows.length === 0) return null;
+                var total = 0;
+                rows.forEach(function (r) {
+                    var m = r.money != null ? Number(r.money) : 0;
+                    if (!isNaN(m)) total += m;
+                });
+                return total / rows.length;
+            }
+            return null;
+        }
+        var stations = (user.stations && Array.isArray(user.stations)) ? user.stations : [];
+        var n = hostDenominator != null ? hostDenominator : stations.length;
+        if (n === 0) return null;
+        var sum = mtdRes.data.reduce(function (s, d) {
+            var m = d.money;
+            if (m == null || m === '') return s;
+            var num = parseFloat(String(m).replace(/[$,]/g, ''), 10);
+            return s + (isNaN(num) ? 0 : num);
+        }, 0);
+        return sum / n;
+    }
+
     async function loadDashboard() {
         const user = getUser();
         if (!user || !user.id) {
@@ -211,6 +264,7 @@
         }
         var chartRange = { start: rangeCheck.start, end: rangeCheck.end };
 
+        var allRes = null;
         try {
             var stationIdOrIds = null;
             if (!isAdmin()) {
@@ -218,7 +272,20 @@
                 if (stations.length > 0) stationIdOrIds = stations;
             }
             var mtdRes = await fetchRentsMtd(stationIdOrIds);
-            if (window.Charts && window.Charts.renderMtdChart) window.Charts.renderMtdChart(mtdRes, chartRange);
+            if (isAdmin()) {
+                try {
+                    allRes = await fetchRentsMtdAll();
+                } catch (allFetchErr) {
+                    console.warn('Station totals (mtd/all) failed to load', allFetchErr);
+                }
+            }
+            var hostDenominator = null;
+            if (!isAdmin()) {
+                hostDenominator = await countUserStationsExcludingTestStations(user);
+            }
+            var avgPerStation = computeAvgRevenuePerStation(user, mtdRes, allRes, hostDenominator);
+            var chartOpts = { start: chartRange.start, end: chartRange.end, avgPerStation: avgPerStation };
+            if (window.Charts && window.Charts.renderMtdChart) window.Charts.renderMtdChart(mtdRes, chartOpts);
         } catch (mtdErr) {
             console.warn('MTD rent data failed to load', mtdErr);
             var mtdCard = document.getElementById('mtdChartCard');
@@ -235,8 +302,12 @@
             if (stationPerf) stationPerf.style.display = 'block';
             if (stationPerfSkeletons) stationPerfSkeletons.style.display = 'block';
             try {
-                var allRes = await fetchRentsMtdAll();
-                renderStationPerformanceList(allRes);
+                if (allRes) {
+                    renderStationPerformanceList(allRes);
+                } else {
+                    allRes = await fetchRentsMtdAll();
+                    renderStationPerformanceList(allRes);
+                }
             } catch (allErr) {
                 console.warn('Station performance (mtd/all) failed to load', allErr);
                 if (stationPerf) stationPerf.style.display = 'none';

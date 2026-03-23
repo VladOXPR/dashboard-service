@@ -608,11 +608,13 @@
         }
         .mtd-stats-row {
             display: flex;
+            flex-wrap: wrap;
             gap: 1rem;
             margin-bottom: 1.5rem;
         }
         .mtd-mini-card {
             flex: 1;
+            min-width: 180px;
             background: #000;
             border: 1px solid #262626;
             border-radius: 12px;
@@ -1616,6 +1618,10 @@
             <div class="mtd-mini-card">
                 <div class="mtd-mini-card-title" id="mtdDailyAvgTitle">February daily average</div>
                 <div class="mtd-mini-card-amount" id="mtdDailyAvgAmount">$0</div>
+            </div>
+            <div class="mtd-mini-card">
+                <div class="mtd-mini-card-title">Avg per station</div>
+                <div class="mtd-mini-card-amount" id="mtdAvgPerStationAmount">—</div>
             </div>
         </div>
         <section class="station-performance-section" id="stationPerformanceSection" style="display: none;">

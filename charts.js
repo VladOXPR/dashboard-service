@@ -30,6 +30,8 @@
         if (!card || !canvas) return;
         if (!mtdPayload || !mtdPayload.success || !Array.isArray(mtdPayload.data) || mtdPayload.data.length === 0) {
             card.style.display = 'none';
+            var statsRowEmpty = document.getElementById('mtdStatsRow');
+            if (statsRowEmpty) statsRowEmpty.style.display = 'none';
             return;
         }
         var data = mtdPayload.data;
@@ -51,6 +53,7 @@
         var todayAmountEl = document.getElementById('mtdTodayAmount');
         var dailyAvgTitleEl = document.getElementById('mtdDailyAvgTitle');
         var dailyAvgAmountEl = document.getElementById('mtdDailyAvgAmount');
+        var avgPerStationEl = document.getElementById('mtdAvgPerStationAmount');
         if (statsRow) statsRow.style.display = 'flex';
 
         var monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
@@ -75,6 +78,15 @@
         var sameMonth = rangeStart.getFullYear() === rangeEnd.getFullYear() && rangeStart.getMonth() === rangeEnd.getMonth();
         if (dailyAvgTitleEl) dailyAvgTitleEl.textContent = sameMonth ? (monthNames[rangeStart.getMonth()] + ' daily average') : 'Period daily average';
         if (dailyAvgAmountEl) dailyAvgAmountEl.textContent = '$' + dailyAvg;
+
+        var aps = opts.avgPerStation;
+        if (avgPerStationEl) {
+            if (aps != null && typeof aps === 'number' && !isNaN(aps)) {
+                avgPerStationEl.textContent = '$' + Math.round(aps);
+            } else {
+                avgPerStationEl.textContent = '—';
+            }
+        }
 
         function parseMtdDate(dStr) {
             if (!dStr || typeof dStr !== 'string') return new Date(0);
