@@ -192,53 +192,38 @@
         return String(title || '').trim().toLowerCase() === 'test station';
     }
 
-    /** Count of user.stations after excluding stations whose title is "TEST STATION" (from /api/stations). */
-    async function countUserStationsExcludingTestStations(user) {
-        var ids = (user.stations && Array.isArray(user.stations)) ? user.stations : [];
-        if (ids.length === 0) return 0;
-        try {
-            var json = await fetchAllStations();
-            var list = (json.data != null && Array.isArray(json.data)) ? json.data : [];
-            var testIds = new Set();
-            list.forEach(function (s) {
-                if (isTestStationTitle(s.title)) testIds.add(String(s.id));
-            });
-            return ids.filter(function (id) { return !testIds.has(String(id)); }).length;
-        } catch (e) {
-            return ids.length;
-        }
-    }
-
     /**
-     * Average revenue per station for the selected period.
-     * Admin: from /rents/range/all (stations with activity in range), excluding "TEST STATION".
-     * Non-admin: chart total divided by hostDenominator (stations minus TEST STATION).
+     * Mean per-station net for the date range over all network stations (GET /stations),
+     * excluding only "TEST STATION". Stations with no row in /rents/range/all count as $0.
      */
-    function computeAvgRevenuePerStation(user, mtdRes, allRes, hostDenominator) {
-        if (!mtdRes || !mtdRes.success || !Array.isArray(mtdRes.data)) return null;
-        if (isAdmin()) {
-            if (allRes && allRes.success && Array.isArray(allRes.data) && allRes.data.length > 0) {
-                var rows = allRes.data.filter(function (r) { return !isTestStationTitle(r.station_title); });
-                if (rows.length === 0) return null;
-                var total = 0;
-                rows.forEach(function (r) {
+    async function computeNetworkAvgRevenuePerStationExcludingTest(allRes) {
+        try {
+            var stationsJson = await fetchAllStations();
+            var allStations = (stationsJson.data != null && Array.isArray(stationsJson.data)) ? stationsJson.data : [];
+            var networkStations = allStations.filter(function (s) { return !isTestStationTitle(s.title); });
+            var n = networkStations.length;
+            if (n === 0) return null;
+
+            var moneyById = {};
+            if (allRes && allRes.success && Array.isArray(allRes.data)) {
+                allRes.data.forEach(function (r) {
+                    var sid = r.station_id != null ? String(r.station_id) : '';
+                    if (!sid) return;
                     var m = r.money != null ? Number(r.money) : 0;
-                    if (!isNaN(m)) total += m;
+                    if (!isNaN(m)) moneyById[sid] = m;
                 });
-                return total / rows.length;
             }
+
+            var sum = 0;
+            networkStations.forEach(function (s) {
+                var id = String(s.id);
+                sum += moneyById[id] != null ? moneyById[id] : 0;
+            });
+            return sum / n;
+        } catch (e) {
+            console.warn('Network avg per station failed', e);
             return null;
         }
-        var stations = (user.stations && Array.isArray(user.stations)) ? user.stations : [];
-        var n = hostDenominator != null ? hostDenominator : stations.length;
-        if (n === 0) return null;
-        var sum = mtdRes.data.reduce(function (s, d) {
-            var m = d.money;
-            if (m == null || m === '') return s;
-            var num = parseFloat(String(m).replace(/[$,]/g, ''), 10);
-            return s + (isNaN(num) ? 0 : num);
-        }, 0);
-        return sum / n;
     }
 
     async function loadDashboard() {
@@ -272,18 +257,12 @@
                 if (stations.length > 0) stationIdOrIds = stations;
             }
             var mtdRes = await fetchRentsMtd(stationIdOrIds);
-            if (isAdmin()) {
-                try {
-                    allRes = await fetchRentsMtdAll();
-                } catch (allFetchErr) {
-                    console.warn('Station totals (mtd/all) failed to load', allFetchErr);
-                }
+            try {
+                allRes = await fetchRentsMtdAll();
+            } catch (allFetchErr) {
+                console.warn('Station totals (rents/.../all) failed to load', allFetchErr);
             }
-            var hostDenominator = null;
-            if (!isAdmin()) {
-                hostDenominator = await countUserStationsExcludingTestStations(user);
-            }
-            var avgPerStation = computeAvgRevenuePerStation(user, mtdRes, allRes, hostDenominator);
+            var avgPerStation = await computeNetworkAvgRevenuePerStationExcludingTest(allRes);
             var chartOpts = { start: chartRange.start, end: chartRange.end, avgPerStation: avgPerStation };
             if (window.Charts && window.Charts.renderMtdChart) window.Charts.renderMtdChart(mtdRes, chartOpts);
         } catch (mtdErr) {
