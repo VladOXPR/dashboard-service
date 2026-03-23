@@ -7,15 +7,20 @@
 
     var MODULE_ID = 'performanceDateRangeModule';
 
+    /** Local calendar date as YYYY-MM-DD for <input type="date"> (avoid UTC shift from toISOString()). */
+    function toLocalYMD(d) {
+        function pad(n) { return String(n).padStart(2, '0'); }
+        return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+    }
+
     function setDefaultDates() {
         var startEl = document.getElementById('startDate');
         var endEl = document.getElementById('endDate');
         if (!startEl || !endEl) return;
         var end = new Date();
-        var start = new Date(end);
-        start.setDate(1);
-        startEl.value = start.toISOString().slice(0, 10);
-        endEl.value = end.toISOString().slice(0, 10);
+        var start = new Date(end.getFullYear(), end.getMonth(), 1);
+        startEl.value = toLocalYMD(start);
+        endEl.value = toLocalYMD(end);
     }
 
     function getSelectedRange() {
