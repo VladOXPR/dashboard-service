@@ -326,6 +326,37 @@
         return api('/api/stations');
     }
 
+    function stationsFromApiJson(json) {
+        if (!json || typeof json !== 'object') return [];
+        if (Array.isArray(json.data)) return json.data;
+        if (Array.isArray(json.Data)) return json.Data;
+        return [];
+    }
+
+    function stationsRowsForXlsx(list) {
+        var keySet = {};
+        (list || []).forEach(function (row) {
+            if (row && typeof row === 'object') {
+                Object.keys(row).forEach(function (k) { keySet[k] = true; });
+            }
+        });
+        var keys = Object.keys(keySet).sort();
+        return (list || []).map(function (row) {
+            var o = {};
+            keys.forEach(function (k) {
+                if (!row || typeof row !== 'object') {
+                    o[k] = '';
+                    return;
+                }
+                var v = row[k];
+                if (v === null || v === undefined) o[k] = '';
+                else if (typeof v === 'object') o[k] = JSON.stringify(v);
+                else o[k] = v;
+            });
+            return o;
+        });
+    }
+
     async function fetchAllUsers() {
         return api('/api/users');
     }
@@ -971,7 +1002,7 @@
         errEl.style.display = 'none';
         try {
             var json = await fetchAllStations();
-            var list = (json.data != null && Array.isArray(json.data)) ? json.data : (json.Data && Array.isArray(json.Data) ? json.Data : []);
+            var list = stationsFromApiJson(json);
             renderStationManagementList(list);
         } catch (e) {
             console.error(e);
@@ -1116,6 +1147,44 @@
         });
         document.getElementById('userFormDrawer').addEventListener('click', function (e) {
             if (e.target === this) closeUserFormModal();
+        });
+
+        document.getElementById('exportStationsBtn').addEventListener('click', async function () {
+            var btn = document.getElementById('exportStationsBtn');
+            var errEl = document.getElementById('mgmtError');
+            errEl.style.display = 'none';
+            if (typeof XLSX === 'undefined') {
+                errEl.style.display = 'block';
+                errEl.textContent = 'Export failed: spreadsheet library did not load. Refresh the page and try again.';
+                errEl.style.color = '#fca5a5';
+                return;
+            }
+            var label = btn.textContent;
+            btn.disabled = true;
+            btn.setAttribute('aria-busy', 'true');
+            btn.textContent = 'Exporting…';
+            try {
+                var json = await fetchAllStations();
+                var list = stationsFromApiJson(json);
+                var rows = stationsRowsForXlsx(list);
+                var wb = XLSX.utils.book_new();
+                var ws = XLSX.utils.json_to_sheet(rows.length ? rows : [{}]);
+                XLSX.utils.book_append_sheet(wb, ws, 'Stations');
+                var now = new Date();
+                var y = now.getFullYear();
+                var mo = String(now.getMonth() + 1).padStart(2, '0');
+                var da = String(now.getDate()).padStart(2, '0');
+                XLSX.writeFile(wb, 'cuub-stations-' + y + '-' + mo + '-' + da + '.xlsx');
+            } catch (e) {
+                console.error(e);
+                errEl.style.display = 'block';
+                errEl.textContent = (e && e.message) ? e.message : 'Export failed. Please try again.';
+                errEl.style.color = '#fca5a5';
+            } finally {
+                btn.disabled = false;
+                btn.removeAttribute('aria-busy');
+                btn.textContent = label;
+            }
         });
 
         document.getElementById('addStationBtn').addEventListener('click', openAddStationModal);
