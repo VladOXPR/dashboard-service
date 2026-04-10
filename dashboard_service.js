@@ -713,6 +713,23 @@
         }
     }
 
+    function stationHasAddress(s) {
+        if (!s || typeof s !== 'object') return false;
+        var loc = s.location != null ? String(s.location).trim() : '';
+        if (loc) return true;
+        var addr = s.address != null ? String(s.address).trim() : '';
+        return !!addr;
+    }
+
+    function stationHasStripeId(s) {
+        if (!s || typeof s !== 'object') return false;
+        return s.stripe_id != null && String(s.stripe_id).trim() !== '';
+    }
+
+    function stationMissingAddressOrStripe(s) {
+        return !stationHasAddress(s) || !stationHasStripeId(s);
+    }
+
     function renderStationManagementList(stations) {
         var container = document.getElementById('stationMgmtList');
         var loading = document.getElementById('mgmtLoading');
@@ -737,8 +754,12 @@
             var isOnline = s.online === true;
             var statusClass = isOnline ? 'online' : 'offline';
             var statusDot = '<span class="station-status-dot ' + statusClass + '" aria-label="' + (isOnline ? 'Online' : 'Offline') + '"></span>';
+            var missingMark = '';
+            if (stationMissingAddressOrStripe(s)) {
+                missingMark = '<span class="station-mgmt-missing-mark" aria-label="Missing address or Stripe ID" title="Missing address or Stripe ID">!</span> ';
+            }
             html += '<tr data-station-id="' + id + '" data-station-title="' + escapeHtml(String(s.title || '')) + '" data-station-lat="' + escapeHtml(lat) + '" data-station-lng="' + escapeHtml(lng) + '">' +
-                '<td class="station-status-cell">' + statusDot + '</td><td>' + title + '</td>' +
+                '<td class="station-status-cell">' + statusDot + '</td><td>' + missingMark + title + '</td>' +
                 '<td>' +
                     '<button type="button" class="btn-dispense-all" data-action="dispense-all" data-station-id="' + id + '" aria-label="Dispense all powerbanks for station">' +
                         '<img src="assets/dispense-all.png" alt="" />' +
