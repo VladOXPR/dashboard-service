@@ -52,6 +52,31 @@ function proxyToCuub(pathname, res, options) {
     request.end();
 }
 
+/** Stream upstream body as-is (CSV, etc.). Used for /stations/export — must not JSON.parse. */
+function proxyToCuubPassthrough(pathname, res) {
+    const reqOptions = {
+        hostname: 'api.cuub.tech',
+        path: pathname,
+        method: 'GET',
+        headers: { 'Accept': 'text/csv, application/json, */*' }
+    };
+    const request = https.request(reqOptions, (apiRes) => {
+        const ct = apiRes.headers['content-type'];
+        if (ct) res.setHeader('Content-Type', ct);
+        const cd = apiRes.headers['content-disposition'];
+        if (cd) res.setHeader('Content-Disposition', cd);
+        res.status(apiRes.statusCode);
+        apiRes.pipe(res);
+    });
+    request.on('error', (e) => {
+        console.error('API request error:', e);
+        if (!res.headersSent) {
+            res.status(500).json({ success: false, error: 'Failed to fetch from API' });
+        }
+    });
+    request.end();
+}
+
 app.get('/api/users', (req, res) => proxyToCuub('/users/', res));
 app.get('/api/users/:id', (req, res) => proxyToCuub(`/users/${req.params.id}`, res));
 app.post('/api/users', (req, res) => {
@@ -61,6 +86,7 @@ app.patch('/api/users/:id', (req, res) => {
     proxyToCuub(`/users/${req.params.id}`, res, { method: 'PATCH', body: JSON.stringify(req.body || {}) });
 });
 app.delete('/api/users/:id', (req, res) => proxyToCuub(`/users/${req.params.id}`, res, { method: 'DELETE' }));
+app.get('/api/stations/export', (req, res) => proxyToCuubPassthrough('/stations/export', res));
 app.get('/api/stations', (req, res) => proxyToCuub('/stations/', res));
 app.get('/api/stations/:id', (req, res) => proxyToCuub(`/stations/${req.params.id}`, res));
 app.post('/api/stations', (req, res) => {

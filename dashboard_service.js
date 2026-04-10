@@ -199,7 +199,7 @@
     async function computeNetworkAvgRevenuePerStationExcludingTest(allRes) {
         try {
             var stationsJson = await fetchAllStations();
-            var allStations = (stationsJson.data != null && Array.isArray(stationsJson.data)) ? stationsJson.data : [];
+            var allStations = stationsFromApiJson(stationsJson);
             var networkStations = allStations.filter(function (s) { return !isTestStationTitle(s.title); });
             var n = networkStations.length;
             if (n === 0) return null;
@@ -333,25 +333,52 @@
         return [];
     }
 
+    /**
+     * Aligns with API normalizeStationRow: weekday_hours stays object when already parsed;
+     * if string, JSON.parse; on failure null. Other fields pass through (shallow copy).
+     */
+    function normalizeStationRow(row) {
+        if (!row || typeof row !== 'object') return row;
+        var out = Object.assign({}, row);
+        var wh = out.weekday_hours;
+        if (wh == null || wh === '') {
+            out.weekday_hours = null;
+        } else if (typeof wh === 'string') {
+            try {
+                out.weekday_hours = JSON.parse(wh);
+            } catch (e) {
+                out.weekday_hours = null;
+            }
+        }
+        return out;
+    }
+
+    /** Serialize like server CSV: objects/arrays → JSON.stringify; primitives as Excel values. */
+    function stationFieldValueForExport(v) {
+        if (v === null || v === undefined) return '';
+        if (typeof v === 'object') return JSON.stringify(v);
+        return v;
+    }
+
     function stationsRowsForXlsx(list) {
+        var rows = (list || []).map(function (row) {
+            return row && typeof row === 'object' ? normalizeStationRow(row) : row;
+        });
         var keySet = {};
-        (list || []).forEach(function (row) {
+        rows.forEach(function (row) {
             if (row && typeof row === 'object') {
                 Object.keys(row).forEach(function (k) { keySet[k] = true; });
             }
         });
         var keys = Object.keys(keySet).sort();
-        return (list || []).map(function (row) {
+        return rows.map(function (row) {
             var o = {};
             keys.forEach(function (k) {
                 if (!row || typeof row !== 'object') {
                     o[k] = '';
                     return;
                 }
-                var v = row[k];
-                if (v === null || v === undefined) o[k] = '';
-                else if (typeof v === 'object') o[k] = JSON.stringify(v);
-                else o[k] = v;
+                o[k] = stationFieldValueForExport(row[k]);
             });
             return o;
         });
@@ -726,7 +753,11 @@
             btn.addEventListener('click', function () {
                 var row = btn.closest('tr');
                 var sid = row && row.getAttribute('data-station-id');
-                if (sid) openEditStationModal(sid, row);
+                if (sid) {
+                    openEditStationModal(sid, row).catch(function (e) {
+                        console.error(e);
+                    });
+                }
             });
         });
         container.querySelectorAll('.btn-delete').forEach(function (btn) {
@@ -833,15 +864,35 @@
         });
     }
 
+    function ensureStationAddressStripeFieldsShown() {
+        var wrap = document.getElementById('stationFormCreateExtra');
+        var addr = document.getElementById('stationAddress');
+        var stripe = document.getElementById('stationStripeId');
+        if (!wrap || !addr || !stripe) return;
+        wrap.style.display = '';
+        addr.required = true;
+        stripe.required = true;
+    }
+
+    function stationObjectFromGetStationJson(json) {
+        if (!json || typeof json !== 'object') return null;
+        var d = json.data;
+        if (d && typeof d === 'object' && !Array.isArray(d)) return d;
+        d = json.Data;
+        if (d && typeof d === 'object' && !Array.isArray(d)) return d;
+        return null;
+    }
+
     function openAddStationModal() {
         document.getElementById('stationFormTitle').textContent = 'Add station';
         document.getElementById('stationFormDescription').textContent = 'Create a new station';
         document.getElementById('stationForm').reset();
         document.getElementById('stationId').disabled = false;
+        ensureStationAddressStripeFieldsShown();
         document.getElementById('stationFormDrawer').classList.add('active');
     }
 
-    function openEditStationModal(stationId, row) {
+    async function openEditStationModal(stationId, row) {
         var title = row.getAttribute('data-station-title');
         var lat = row.getAttribute('data-station-lat');
         var lng = row.getAttribute('data-station-lng');
@@ -853,6 +904,9 @@
         }
         document.getElementById('stationFormTitle').textContent = 'Edit station';
         document.getElementById('stationFormDescription').textContent = 'Update station information';
+        ensureStationAddressStripeFieldsShown();
+        document.getElementById('stationAddress').value = '';
+        document.getElementById('stationStripeId').value = '';
         document.getElementById('stationId').value = stationId;
         document.getElementById('stationId').disabled = true;
         document.getElementById('stationTitle').value = title || '';
@@ -860,12 +914,28 @@
         document.getElementById('stationLng').value = lng || '';
         document.getElementById('stationFormDrawer').setAttribute('data-edit-id', stationId);
         document.getElementById('stationFormDrawer').classList.add('active');
+        try {
+            var json = await fetchStation(stationId);
+            var s = stationObjectFromGetStationJson(json);
+            if (s) {
+                document.getElementById('stationAddress').value = s.location != null ? String(s.location) : '';
+                document.getElementById('stationStripeId').value = s.stripe_id != null ? String(s.stripe_id) : '';
+            }
+        } catch (err) {
+            console.error(err);
+            alert('Could not load address and Stripe ID from the server. You can enter or correct them and save.');
+        }
     }
 
     function closeStationFormModal() {
         document.getElementById('stationFormDrawer').classList.remove('active');
         document.getElementById('stationFormDrawer').removeAttribute('data-edit-id');
         document.getElementById('stationId').disabled = false;
+        var addr = document.getElementById('stationAddress');
+        var stripe = document.getElementById('stationStripeId');
+        if (addr) addr.value = '';
+        if (stripe) stripe.value = '';
+        ensureStationAddressStripeFieldsShown();
     }
 
     function openDeleteConfirmModal(type, id, row) {
@@ -967,8 +1037,7 @@
         refreshChips();
         try {
             var json = await fetchAllStations();
-            var list = (json.data != null && Array.isArray(json.data)) ? json.data : (json.Data && Array.isArray(json.Data) ? json.Data : []);
-            window._cachedStations = list;
+            window._cachedStations = stationsFromApiJson(json);
         } catch (e) { window._cachedStations = []; }
         refreshAddSelect();
         document.getElementById('userAddStationBtn').onclick = function () {
@@ -1197,15 +1266,34 @@
             var title = document.getElementById('stationTitle').value.trim();
             var lat = parseFloat(document.getElementById('stationLat').value, 10);
             var lng = parseFloat(document.getElementById('stationLng').value, 10);
+            var address = document.getElementById('stationAddress').value.trim();
+            var stripeId = document.getElementById('stationStripeId').value.trim();
+            if (!address || !stripeId) {
+                alert('Address and Stripe ID are required.');
+                return;
+            }
             var submitBtn = document.getElementById('stationFormSubmit');
             submitBtn.disabled = true;
             try {
                 if (editId) {
-                    await updateStation(editId, { title: title, latitude: lat, longitude: lng });
+                    await updateStation(editId, {
+                        title: title,
+                        latitude: lat,
+                        longitude: lng,
+                        location: address,
+                        stripe_id: stripeId
+                    });
                     closeStationFormModal();
                     loadStationManagement();
                 } else {
-                    await createStation({ id: id, title: title, latitude: lat, longitude: lng });
+                    await createStation({
+                        id: id,
+                        title: title,
+                        latitude: lat,
+                        longitude: lng,
+                        location: address,
+                        stripe_id: stripeId
+                    });
                     closeStationFormModal();
                     loadStationManagement();
                 }
