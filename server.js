@@ -35,8 +35,14 @@ function proxyToCuub(pathname, res, options) {
         let data = '';
         apiRes.on('data', (chunk) => { data += chunk; });
         apiRes.on('end', () => {
+            const code = apiRes.statusCode;
+            const trimmed = (data || '').trim();
+            if (trimmed === '') {
+                res.status(code).end();
+                return;
+            }
             try {
-                res.status(apiRes.statusCode).json(JSON.parse(data));
+                res.status(code).json(JSON.parse(trimmed));
             } catch (e) {
                 console.error('Error parsing API response:', e);
                 res.status(500).json({ success: false, error: 'Failed to parse API response' });
@@ -88,14 +94,15 @@ app.patch('/api/users/:id', (req, res) => {
 app.delete('/api/users/:id', (req, res) => proxyToCuub(`/users/${req.params.id}`, res, { method: 'DELETE' }));
 app.get('/api/stations/export', (req, res) => proxyToCuubPassthrough('/stations/export', res));
 app.get('/api/stations', (req, res) => proxyToCuub('/stations/', res));
-app.get('/api/stations/:id', (req, res) => proxyToCuub(`/stations/${req.params.id}`, res));
+app.get('/api/stations/:id', (req, res) => proxyToCuub(`/stations/${encodeURIComponent(req.params.id)}`, res));
 app.post('/api/stations', (req, res) => {
     proxyToCuub('/stations', res, { method: 'POST', body: JSON.stringify(req.body || {}) });
 });
 app.patch('/api/stations/:id', (req, res) => {
-    proxyToCuub(`/stations/${req.params.id}`, res, { method: 'PATCH', body: JSON.stringify(req.body || {}) });
+    const id = encodeURIComponent(req.params.id);
+    proxyToCuub(`/stations/${id}`, res, { method: 'PATCH', body: JSON.stringify(req.body || {}) });
 });
-app.delete('/api/stations/:id', (req, res) => proxyToCuub(`/stations/${req.params.id}`, res, { method: 'DELETE' }));
+app.delete('/api/stations/:id', (req, res) => proxyToCuub(`/stations/${encodeURIComponent(req.params.id)}`, res, { method: 'DELETE' }));
 app.get('/api/rents/:dateRange/all', (req, res) => proxyToCuub(`/rents/${req.params.dateRange}/all`, res));
 app.get('/api/rents/:dateRange/:stationIds', (req, res) => {
     proxyToCuub(`/rents/${req.params.dateRange}/${req.params.stationIds}`, res);

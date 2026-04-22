@@ -650,15 +650,30 @@
         return json;
     }
 
+    async function jsonFromFetchResponse(res) {
+        var text = await res.text();
+        if (!res.ok) {
+            var errObj = {};
+            if (text && text.trim()) {
+                try { errObj = JSON.parse(text); } catch (e) {}
+            }
+            throw new Error(errObj.error || errObj.message || ('Request failed (' + res.status + ')'));
+        }
+        if (!text || !text.trim()) return {};
+        try {
+            return JSON.parse(text);
+        } catch (e) {
+            throw new Error('Invalid response from server');
+        }
+    }
+
     async function createStation(payload) {
         var res = await fetch('/api/stations', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         });
-        var json = await res.json();
-        if (!res.ok) throw new Error(json.error || json.message || 'Request failed');
-        return json;
+        return jsonFromFetchResponse(res);
     }
 
     async function updateStation(id, payload) {
@@ -667,16 +682,12 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         });
-        var json = await res.json();
-        if (!res.ok) throw new Error(json.error || json.message || 'Request failed');
-        return json;
+        return jsonFromFetchResponse(res);
     }
 
     async function deleteStation(id) {
         var res = await fetch('/api/stations/' + encodeURIComponent(id), { method: 'DELETE' });
-        var json = await res.json();
-        if (!res.ok) throw new Error(json.error || json.message || 'Request failed');
-        return json;
+        return jsonFromFetchResponse(res);
     }
 
     function showStationMgmtError(msg) {
@@ -685,6 +696,22 @@
         errEl.style.display = 'block';
         errEl.textContent = msg;
         errEl.style.color = '#fca5a5';
+    }
+
+    /**
+     * After save, GET the station. api.cuub.tech currently may ignore address + stripe_id on
+     * POST/PATCH (defaults: address "X", stripe_id null) — the map service must persist them.
+     */
+    function warnIfServerDidNotPersistAddressStripe(station, expectedAddress, expectedStripe) {
+        if (!station) return;
+        var gotAddr = station.address != null ? String(station.address).trim() : '';
+        var gotStripe = station.stripe_id != null ? String(station.stripe_id).trim() : '';
+        if (gotAddr === expectedAddress && gotStripe === expectedStripe) return;
+        showStationMgmtError(
+            'The map API (api.cuub.tech) did not save the address and/or Stripe ID. The dashboard sent the correct data. ' +
+            'The backend must read address and stripe_id from the request and write them to the database in POST and PATCH. ' +
+            'If this persists, your title and coordinates may still be updating; contact whoever maintains the map / stations API.'
+        );
     }
 
     async function dispenseAllForStation(stationId, buttonEl) {
@@ -715,10 +742,10 @@
 
     function stationHasAddress(s) {
         if (!s || typeof s !== 'object') return false;
-        var loc = s.location != null ? String(s.location).trim() : '';
-        if (loc) return true;
         var addr = s.address != null ? String(s.address).trim() : '';
-        return !!addr;
+        if (addr) return true;
+        var loc = s.location != null ? String(s.location).trim() : '';
+        return !!loc;
     }
 
     function stationHasStripeId(s) {
@@ -939,7 +966,8 @@
             var json = await fetchStation(stationId);
             var s = stationObjectFromGetStationJson(json);
             if (s) {
-                document.getElementById('stationAddress').value = s.location != null ? String(s.location) : '';
+                var addrVal = s.address != null ? String(s.address) : (s.location != null ? String(s.location) : '');
+                document.getElementById('stationAddress').value = addrVal;
                 document.getElementById('stationStripeId').value = s.stripe_id != null ? String(s.stripe_id) : '';
             }
         } catch (err) {
@@ -1298,25 +1326,36 @@
             try {
                 if (editId) {
                     await updateStation(editId, {
+                        id: editId,
                         title: title,
                         latitude: lat,
                         longitude: lng,
-                        location: address,
+                        address: address,
                         stripe_id: stripeId
                     });
                     closeStationFormModal();
-                    loadStationManagement();
+                    await loadStationManagement();
+                    var gotEdit = null;
+                    try {
+                        gotEdit = stationObjectFromGetStationJson(await fetchStation(editId));
+                    } catch (e) {}
+                    warnIfServerDidNotPersistAddressStripe(gotEdit, address, stripeId);
                 } else {
                     await createStation({
                         id: id,
                         title: title,
                         latitude: lat,
                         longitude: lng,
-                        location: address,
+                        address: address,
                         stripe_id: stripeId
                     });
                     closeStationFormModal();
-                    loadStationManagement();
+                    await loadStationManagement();
+                    var gotNew = null;
+                    try {
+                        gotNew = stationObjectFromGetStationJson(await fetchStation(id));
+                    } catch (e) {}
+                    warnIfServerDidNotPersistAddressStripe(gotNew, address, stripeId);
                 }
             } catch (err) {
                 alert(err.message || 'Request failed.');
