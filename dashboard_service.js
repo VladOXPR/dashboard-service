@@ -160,21 +160,82 @@
         if (drm) drm.style.display = 'block';
     }
 
-    function renderStationPerformanceList(res) {
+    function renderStationPerformanceRowsFromRentDataOnly(data) {
+        var html = '';
+        (data || []).forEach(function (row) {
+            var title = escapeHtml(String(row.station_title || row.station_id || '—'));
+            var money = row.money != null ? Number(row.money) : 0;
+            html += '<tr><td>' + title + '</td><td class="station-performance-money">$' + money + '</td></tr>';
+        });
+        return html;
+    }
+
+    /**
+     * Admin "Station performance" table: one row per station from GET /stations, revenue from
+     * /rents/range/all when present; otherwise $0 (no row from API = no revenue in range).
+     */
+    async function renderStationPerformanceList(res) {
         var section = document.getElementById('stationPerformanceSection');
         var container = document.getElementById('stationPerformanceList');
         var skeletons = document.getElementById('stationPerformanceSkeletons');
         if (!section || !container) return;
         if (skeletons) skeletons.style.display = 'none';
-        if (!res || !res.success || !Array.isArray(res.data) || res.data.length === 0) {
-            section.style.display = 'none';
+
+        var moneyById = {};
+        if (res && res.success && Array.isArray(res.data)) {
+            res.data.forEach(function (r) {
+                var sid = r.station_id != null ? String(r.station_id) : '';
+                if (!sid) return;
+                var m = r.money != null ? Number(r.money) : 0;
+                if (!isNaN(m)) moneyById[sid] = m;
+            });
+        }
+
+        var allStations = [];
+        try {
+            var stationsJson = await fetchAllStations();
+            allStations = stationsFromApiJson(stationsJson);
+        } catch (e) {
+            console.warn('Station list for performance table failed', e);
+        }
+
+        if (allStations.length === 0) {
+            if (res && res.success && Array.isArray(res.data) && res.data.length > 0) {
+                var dataCopy = res.data.slice();
+                dataCopy.sort(function (a, b) {
+                    var ma = a.money != null ? Number(a.money) : 0;
+                    var mb = b.money != null ? Number(b.money) : 0;
+                    if (mb !== ma) return mb - ma;
+                    var ta = String(a.station_title || a.station_id || '');
+                    var tb = String(b.station_title || b.station_id || '');
+                    return ta.localeCompare(tb, undefined, { sensitivity: 'base' });
+                });
+                var htmlOnly = '<table class="station-performance-table" aria-label="Station revenue for selected range"><thead><tr><th>Station</th><th>Revenue</th></tr></thead><tbody>' +
+                    renderStationPerformanceRowsFromRentDataOnly(dataCopy) + '</tbody></table>';
+                container.innerHTML = htmlOnly;
+                section.style.display = 'block';
+            } else {
+                section.style.display = 'none';
+            }
             return;
         }
+
+        var rows = [];
+        allStations.forEach(function (s) {
+            var id = String(s.id != null ? s.id : '');
+            if (!id) return;
+            var t = s.title != null && String(s.title).trim() !== '' ? s.title : id;
+            var money = moneyById[id] != null ? moneyById[id] : 0;
+            rows.push({ id: id, title: t, money: money });
+        });
+        rows.sort(function (a, b) {
+            if (b.money !== a.money) return b.money - a.money;
+            return String(a.title).localeCompare(String(b.title), undefined, { sensitivity: 'base' });
+        });
+
         var html = '<table class="station-performance-table" aria-label="Station revenue for selected range"><thead><tr><th>Station</th><th>Revenue</th></tr></thead><tbody>';
-        res.data.forEach(function (row) {
-            var title = escapeHtml(String(row.station_title || row.station_id || '—'));
-            var money = row.money != null ? Number(row.money) : 0;
-            html += '<tr><td>' + title + '</td><td class="station-performance-money">$' + money + '</td></tr>';
+        rows.forEach(function (row) {
+            html += '<tr><td>' + escapeHtml(String(row.title)) + '</td><td class="station-performance-money">$' + row.money + '</td></tr>';
         });
         html += '</tbody></table>';
         container.innerHTML = html;
@@ -282,10 +343,10 @@
             if (stationPerfSkeletons) stationPerfSkeletons.style.display = 'block';
             try {
                 if (allRes) {
-                    renderStationPerformanceList(allRes);
+                    await renderStationPerformanceList(allRes);
                 } else {
                     allRes = await fetchRentsMtdAll();
-                    renderStationPerformanceList(allRes);
+                    await renderStationPerformanceList(allRes);
                 }
             } catch (allErr) {
                 console.warn('Station performance (mtd/all) failed to load', allErr);
