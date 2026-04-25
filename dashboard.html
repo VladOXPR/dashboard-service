@@ -977,22 +977,18 @@
             font-size: 0.85rem;
             font-weight: 700;
         }
-        .station-mgmt-table .station-mgmt-count-cell {
-            width: 1%;
+        .station-mgmt-table tr:last-child td { border-bottom: none; }
+        .station-mgmt-table th.station-mgmt-total-header {
             text-align: center;
             vertical-align: middle;
-            padding-left: 0.5rem;
-            padding-right: 0.5rem;
-        }
-        .station-mgmt-table .station-mgmt-title-count {
-            display: inline-block;
             color: #737373;
             font-weight: 600;
             font-variant-numeric: tabular-nums;
+            white-space: nowrap;
         }
-        .station-mgmt-table tr:last-child td { border-bottom: none; }
         .station-mgmt-table .station-status-cell {
             width: 1%;
+            padding-left: 0.5rem;
             padding-right: 0.5rem;
             vertical-align: middle;
             text-align: center;

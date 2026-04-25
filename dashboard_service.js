@@ -851,9 +851,9 @@
         }
         var stationCount = stations.length;
         var html =
-            '<table class="station-mgmt-table"><thead><tr><th class="station-mgmt-count-cell" scope="col" title="Total stations"><span class="station-mgmt-title-count">' +
+            '<table class="station-mgmt-table"><thead><tr><th class="station-mgmt-total-header">' +
             stationCount +
-            '</span></th><th scope="col">Title</th><th scope="col"></th><th scope="col">ID</th><th scope="col">Filled</th><th scope="col">Open</th><th scope="col"></th></tr></thead><tbody>';
+            '</th><th>Title</th><th></th><th>ID</th><th>Filled</th><th>Open</th><th></th></tr></thead><tbody>';
         stations.forEach(function (s) {
             var id = escapeHtml(String(s.id || ''));
             var title = escapeHtml(String(s.title || ''));
