@@ -109,6 +109,19 @@ app.get('/api/rents/:dateRange/:stationIds', (req, res) => {
 });
 app.get('/api/rents/:dateRange', (req, res) => proxyToCuub(`/rents/${req.params.dateRange}`, res));
 app.get('/api/scans', (req, res) => proxyToCuub('/scans/', res));
+app.get('/api/tickets', (req, res) => proxyToCuub('/tickets/', res));
+app.post('/api/tickets', (req, res) => {
+    proxyToCuub('/tickets/', res, { method: 'POST', body: JSON.stringify(req.body || {}) });
+});
+app.patch('/api/tickets/:id', (req, res) => {
+    proxyToCuub(`/tickets/${encodeURIComponent(req.params.id)}`, res, {
+        method: 'PATCH',
+        body: JSON.stringify(req.body || {}),
+    });
+});
+app.delete('/api/tickets/:id', (req, res) => {
+    proxyToCuub(`/tickets/${encodeURIComponent(req.params.id)}`, res, { method: 'DELETE' });
+});
 app.post('/api/pop/:stationId/all', (req, res) => {
     proxyToCuub(`/pop/${req.params.stationId}/all`, res, { method: 'POST' });
 });
@@ -119,6 +132,7 @@ const USER_TYPES = ['host', 'admin', 'distributer', 'distributor'];
 USER_TYPES.forEach(function (type) {
     app.get('/' + type, (req, res) => res.sendFile(path.join(__dirname, 'dashboard.html')));
 });
+app.get('/maintenance', (req, res) => res.sendFile(path.join(__dirname, 'maintenance.html')));
 
 const PORT = process.env.PORT || 8080;
 const HOST = '0.0.0.0';

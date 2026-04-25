@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CUUB — Maintenance</title>
+    <style>
+        @font-face {
+            font-family: 'TT Hoves Pro';
+            src: url('tt_hoves_pro/TT Hoves Pro Trial Medium.ttf') format('truetype');
+            font-weight: 500;
+            font-style: normal;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'TT Hoves Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            min-height: 100vh;
+            background: #000;
+            color: #e5e5e5;
+        }
+        .app-layout {
+            display: flex;
+            min-height: 100vh;
+        }
+        .side-panel {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 240px;
+            height: 100vh;
+            background: #000;
+            border-right: 1px solid #1a1a1a;
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+        }
+        .side-panel-header {
+            padding: 1.25rem 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+        }
+        .side-panel-logo {
+            width: 32px;
+            height: 32px;
+            object-fit: contain;
+        }
+        .side-panel-separator {
+            height: 1px;
+            background: #262626;
+        }
+        .side-panel-nav {
+            flex: 1;
+            padding: 0.75rem 10px;
+            display: flex;
+            flex-direction: column;
+        }
+        .side-panel-nav a {
+            display: flex;
+            gap: 1.2rem;
+            padding: 0.75rem 1rem;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: #a3a3a3;
+            text-decoration: none;
+            transition: color 0.2s, background 0.2s;
+        }
+        .side-panel-nav a:hover {
+            color: #e5e5e5;
+        }
+        .side-panel-nav a.active {
+            color: #e5e5e5;
+            background: #262626;
+            border-radius: 6px;
+        }
+        .side-panel-nav-trailing-rule {
+            height: 1px;
+            background: #262626;
+            margin: 0.35rem 1rem 0.5rem;
+            flex-shrink: 0;
+        }
+        .side-panel-nav .nav-icon {
+            width: 12px;
+            height: 12px;
+            flex-shrink: 0;
+        }
+        .side-panel-nav .nav-icon img,
+        .side-panel-nav .nav-icon svg {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+        #navMaintenance .nav-icon {
+            overflow: visible;
+        }
+        #navMaintenance .nav-icon img {
+            display: block;
+            transform: scale(1.25);
+            transform-origin: center center;
+        }
+        .side-panel-footer {
+            padding: 1rem;
+            border-top: 1px solid #1a1a1a;
+        }
+        .logout {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            padding: 0.6rem 1rem;
+            font-size: 0.85rem;
+            border: 1px solid #333;
+            border-radius: 6px;
+            background: transparent;
+            color: #a3a3a3;
+            cursor: pointer;
+            text-decoration: none;
+        }
+        .logout:hover { background: #1a1a1a; color: #e5e5e5; }
+        .hamburger-btn {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            padding: 0;
+            border: none;
+            border-radius: 8px;
+            background: transparent;
+            color: #e5e5e5;
+            cursor: pointer;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .hamburger-btn:hover {
+            background: #262626;
+        }
+        .hamburger-line {
+            display: block;
+            width: 20px;
+            height: 2px;
+            background: currentColor;
+            border-radius: 1px;
+            transition: transform 0.25s ease, opacity 0.2s ease;
+        }
+        .hamburger-btn.open .hamburger-line:nth-child(1) {
+            transform: translateY(7px) rotate(45deg);
+        }
+        .hamburger-btn.open .hamburger-line:nth-child(2) {
+            opacity: 0;
+        }
+        .hamburger-btn.open .hamburger-line:nth-child(3) {
+            transform: translateY(-7px) rotate(-45deg);
+        }
+        .hamburger-menu {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+        .hamburger-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 999;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transition: opacity 0.25s ease, visibility 0.25s ease;
+        }
+        body.hamburger-open .hamburger-overlay {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+        }
+        body.hamburger-open .side-panel {
+            z-index: 1000;
+        }
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            margin-left: 240px;
+            background: #000;
+        }
+        .main-scroll {
+            flex: 1;
+            overflow-y: auto;
+            background: #000;
+        }
+        .maintenance-main {
+            padding: 1.5rem;
+            max-width: 1200px;
+            margin: 0 auto;
+            background: #000;
+        }
+        /* Match Stations view (dashboard.html) */
+        .stations-menubar {
+            display: flex;
+            align-items: center;
+            gap: 0;
+            margin-bottom: 1rem;
+            border: 1px solid #262626;
+            border-radius: 6px;
+            background: #000;
+            padding: 0;
+            width: fit-content;
+        }
+        .stations-menubar-item {
+            padding: 0.5rem 1rem;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: #e5e5e5;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+        }
+        .stations-menubar-item:hover {
+            background: #262626;
+        }
+        .stations-menubar-item:first-child { border-radius: 6px 0 0 6px; }
+        .stations-menubar-item:last-child { border-radius: 0 6px 6px 0; }
+        .stations-menubar-item + .stations-menubar-item {
+            border-left: 1px solid #262626;
+        }
+        .stations-menubar-item.a-link {
+            color: inherit;
+        }
+        .stations-menubar-item:disabled {
+            opacity: 0.65;
+            cursor: not-allowed;
+        }
+        .stations-menubar-item:disabled:hover {
+            background: transparent;
+        }
+        #maintenance-status {
+            display: none;
+            padding: 0 0 0.75rem;
+            font-size: 0.9rem;
+        }
+        #ticket-list {
+            list-style: none;
+            padding: 0 0 2rem;
+            max-width: 100%;
+        }
+        .ticket-empty { color: #737373; padding: 1rem 0; }
+        .ticket-row {
+            display: flex;
+            align-items: stretch;
+            margin-bottom: 0.75rem;
+            border: 1px solid #262626;
+            border-radius: 8px;
+            overflow: hidden;
+            background: #0a0a0a;
+        }
+        .ticket-stripe { width: 6px; flex-shrink: 0; align-self: stretch; }
+        .ticket-color-red .ticket-stripe { background: #dc2626; }
+        .ticket-color-yellow .ticket-stripe { background: #eab308; }
+        .ticket-main {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            min-width: 0;
+            padding: 0.85rem 1rem;
+        }
+        .ticket-text {
+            flex: 1;
+            min-width: 0;
+        }
+        .ticket-line1 {
+            font-weight: 700;
+            font-size: 1rem;
+            color: #e5e5e5;
+            margin-bottom: 0.35rem;
+            line-height: 1.25;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .ticket-line2 {
+            font-size: 0.85rem;
+            line-height: 1.35;
+            color: #a3a3a3;
+        }
+        .ticket-line2 .ticket-task {
+            color: #737373;
+        }
+        .ticket-line2-sep {
+            color: #525252;
+        }
+        .ticket-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-shrink: 0;
+        }
+        .ticket-actions button {
+            padding: 0.35rem 0.75rem;
+            font-size: 0.8rem;
+            border-radius: 6px;
+            border: 1px solid #404040;
+            background: #262626;
+            color: #e5e5e5;
+            cursor: pointer;
+        }
+        .ticket-actions button:hover { background: #333; }
+        .btn-ticket-done { border-color: #166534 !important; color: #86efac !important; }
+
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.65);
+            z-index: 2000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal-box {
+            background: #111;
+            border: 1px solid #333;
+            border-radius: 10px;
+            max-width: 480px;
+            width: 100%;
+            max-height: 90vh;
+            overflow: auto;
+            padding: 1.25rem;
+        }
+        .modal-box h2 { font-size: 1.05rem; margin-bottom: 1rem; }
+        .field { margin-bottom: 1rem; }
+        .field label { display: block; font-size: 0.8rem; color: #a3a3a3; margin-bottom: 0.35rem; }
+        .field input, .field select, .field textarea {
+            width: 100%;
+            padding: 0.5rem 0.65rem;
+            border-radius: 6px;
+            border: 1px solid #333;
+            background: #000;
+            color: #e5e5e5;
+            font-size: 0.9rem;
+        }
+        .field select[multiple] { min-height: 10rem; }
+        .field textarea { min-height: 4rem; resize: vertical; }
+        #create-station-id-hint, .hint { font-size: 0.8rem; color: #737373; margin-top: 0.35rem; }
+        #modal-create-error, #modal-edit-error {
+            display: none;
+            font-size: 0.85rem;
+            margin-bottom: 0.75rem;
+        }
+        .modal-actions { display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 1rem; }
+        .modal-actions button {
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            border: none;
+        }
+        .modal-actions .btn-cancel { background: #262626; color: #e5e5e5; }
+        .modal-actions .btn-submit { background: #0099FF; color: #fff; font-weight: 600; }
+
+        @media (max-width: 500px) {
+            .app-layout { flex-direction: column; }
+            .side-panel {
+                position: relative;
+                width: 100%;
+                height: auto;
+                min-height: 0;
+                flex-direction: column;
+                flex-wrap: nowrap;
+                border-right: none;
+                border-bottom: 1px solid #1a1a1a;
+            }
+            .main-content { margin-left: 0; }
+            .side-panel-header {
+                padding: 0.75rem 1rem;
+                position: relative;
+            }
+            .hamburger-btn {
+                display: flex !important;
+                margin-left: auto;
+            }
+            .side-panel-separator { display: none; }
+            .hamburger-menu {
+                flex-direction: column;
+                padding: 0.5rem 1rem 1rem;
+                border-top: 1px solid #262626;
+                background: #000;
+                max-height: 0;
+                opacity: 0;
+                overflow: hidden;
+                transition: max-height 0.3s ease, opacity 0.25s ease;
+            }
+            .hamburger-menu.open {
+                max-height: 480px;
+                opacity: 1;
+            }
+            .hamburger-menu .side-panel-nav {
+                flex: none;
+                flex-direction: column;
+                flex-wrap: nowrap;
+                padding: 0.5rem 0 0;
+            }
+            .hamburger-menu .side-panel-nav a {
+                flex: none;
+                min-width: auto;
+                min-height: 44px;
+                font-weight: 600;
+                opacity: 0;
+                transform: translateY(-8px);
+                transition: opacity 0.2s ease, transform 0.2s ease, background 0.2s, color 0.2s;
+            }
+            .hamburger-menu.open .side-panel-nav a {
+                opacity: 1;
+                transform: translateY(0);
+            }
+            .hamburger-menu.open .side-panel-nav > a:nth-child(1) { transition-delay: 0.05s; }
+            .hamburger-menu.open .side-panel-nav > a:nth-child(2) { transition-delay: 0.08s; }
+            .hamburger-menu.open .side-panel-nav > a:nth-child(3) { transition-delay: 0.11s; }
+            .hamburger-menu.open .side-panel-nav > a:nth-child(4) { transition-delay: 0.14s; }
+            .hamburger-menu.open .side-panel-nav > a:nth-child(5) { transition-delay: 0.17s; }
+            .hamburger-menu .logout {
+                font-weight: 600;
+                opacity: 0;
+                transform: translateY(-8px);
+                transition: opacity 0.2s ease, transform 0.2s ease, background 0.2s, color 0.2s;
+            }
+            .hamburger-menu.open .logout {
+                opacity: 1;
+                transform: translateY(0);
+                transition-delay: 0.2s;
+            }
+            .hamburger-menu .side-panel-footer {
+                width: 100%;
+                padding: 0.75rem 0 0;
+                border-top: 1px solid #262626;
+                margin-top: 0.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-layout">
+        <aside class="side-panel">
+            <div class="side-panel-header">
+                <img src="assets/CUUB_Logo.png" alt="CUUB" class="side-panel-logo">
+                <button type="button" class="hamburger-btn" id="hamburgerBtn" aria-label="Menu">
+                    <span class="hamburger-line"></span>
+                    <span class="hamburger-line"></span>
+                    <span class="hamburger-line"></span>
+                </button>
+            </div>
+            <div class="side-panel-separator"></div>
+            <div class="hamburger-menu" id="hamburgerMenu">
+                <nav class="side-panel-nav" id="navTabs">
+                    <a href="#" id="navPerformance">
+                        <span class="nav-icon"><img src="assets/Performance_Icon.png" alt=""></span>
+                        Performance
+                    </a>
+                    <a href="/maintenance" id="navMaintenance" class="active" data-admin-only>
+                        <span class="nav-icon"><img src="assets/Maintenance_Icon.png" alt=""></span>
+                        Maintenance
+                    </a>
+                    <a href="#" id="navScans" data-admin-only>
+                        <span class="nav-icon"><img src="assets/Scan_Icon.png" alt=""></span>
+                        Scans
+                    </a>
+                    <a href="#" id="navStationMgmt" data-admin-only>
+                        <span class="nav-icon"><img src="assets/Stations_Icon.png" alt=""></span>
+                        Stations
+                    </a>
+                    <a href="#" id="navHostMgmt" data-admin-only>
+                        <span class="nav-icon"><img src="assets/Partners_Icon.png" alt=""></span>
+                        Partners
+                    </a>
+                </nav>
+                <div class="side-panel-nav-trailing-rule" aria-hidden="true"></div>
+                <div class="side-panel-footer">
+                    <a href="/login" class="logout" id="logout">Log out</a>
+                </div>
+            </div>
+        </aside>
+        <div class="main-content">
+            <div class="main-scroll">
+                <main class="maintenance-main" id="maintenanceMain">
+                    <div class="stations-menubar" aria-label="Maintenance actions">
+                        <button type="button" class="stations-menubar-item" id="btn-create-ticket">Create Ticket</button>
+                        <a href="https://api.cuub.tech/token" class="stations-menubar-item a-link" id="btn-fetch-api" target="_blank" rel="noopener noreferrer">Fetch API</a>
+                    </div>
+                    <div id="maintenance-status" role="status" aria-live="polite"></div>
+                    <ul id="ticket-list"></ul>
+                </main>
+            </div>
+        </div>
+    </div>
+    <div class="hamburger-overlay" id="hamburgerOverlay" aria-hidden="true"></div>
+
+    <div class="modal-overlay" id="modal-create" aria-hidden="true">
+        <div class="modal-box" role="dialog" aria-labelledby="modal-create-title">
+            <h2 id="modal-create-title">Create ticket</h2>
+            <div class="field">
+                <label for="create-station">Station</label>
+                <select id="create-station"></select>
+                <p id="create-station-id-hint" class="hint">Select a station to create a ticket.</p>
+            </div>
+            <div class="field">
+                <label for="create-task">Tasks (select one or more)</label>
+                <select id="create-task" multiple></select>
+            </div>
+            <div class="field">
+                <label for="create-description">Description (optional)</label>
+                <textarea id="create-description" rows="3"></textarea>
+            </div>
+            <div id="modal-create-error"></div>
+            <div class="modal-actions">
+                <button type="button" class="btn-cancel" id="modal-create-cancel">Cancel</button>
+                <button type="button" class="btn-submit" id="modal-create-submit">Create</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modal-edit" aria-hidden="true">
+        <div class="modal-box" role="dialog" aria-labelledby="modal-edit-title">
+            <h2 id="modal-edit-title">Edit ticket</h2>
+            <input type="hidden" id="edit-db-id" value="">
+            <div class="field">
+                <label for="edit-location-name">Location name</label>
+                <input type="text" id="edit-location-name" autocomplete="off">
+            </div>
+            <div class="field">
+                <label for="edit-task">Tasks</label>
+                <select id="edit-task" multiple></select>
+            </div>
+            <div class="field">
+                <label for="edit-description">Description</label>
+                <textarea id="edit-description" rows="3"></textarea>
+            </div>
+            <div class="field">
+                <label for="edit-latitude">Latitude (optional — leave blank with longitude to keep existing)</label>
+                <input type="text" id="edit-latitude" inputmode="decimal" autocomplete="off">
+            </div>
+            <div class="field">
+                <label for="edit-longitude">Longitude</label>
+                <input type="text" id="edit-longitude" inputmode="decimal" autocomplete="off">
+            </div>
+            <div id="modal-edit-error"></div>
+            <div class="modal-actions">
+                <button type="button" class="btn-cancel" id="modal-edit-cancel">Cancel</button>
+                <button type="button" class="btn-submit" id="modal-edit-submit">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="maintenance.js"></script>
+</body>
+</html>

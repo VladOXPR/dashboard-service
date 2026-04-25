@@ -337,6 +337,24 @@
         showPerformanceView();
 
         if (isAdmin()) {
+            var viewQ = new URLSearchParams(window.location.search).get('view');
+            if (viewQ) {
+                var viewMap = {
+                    scans: 'scans',
+                    'station-management': 'station-management',
+                    stations: 'station-management',
+                    'host-management': 'host-management',
+                    partners: 'host-management',
+                    performance: 'performance',
+                };
+                var resolvedView = viewMap[viewQ];
+                if (resolvedView) {
+                    showView(resolvedView);
+                    try {
+                        window.history.replaceState({}, '', window.location.pathname);
+                    } catch (e) {}
+                }
+            }
             var stationPerf = document.getElementById('stationPerformanceSection');
             var stationPerfSkeletons = document.getElementById('stationPerformanceSkeletons');
             if (stationPerf) stationPerf.style.display = 'block';
