@@ -262,7 +262,7 @@
             align-items: center;
             gap: 1.5rem 2rem;
         }
-        /* Date range module — sits directly above the Revenue chart */
+        /* Date range module — first in performance view, above loading/skeletons and Revenue chart */
         .performance-date-range-module {
             background: #000;
             border: 1px solid #262626;
@@ -1613,6 +1613,18 @@
             </header>
             <div class="main-scroll">
     <main class="view-performance" id="viewPerformance">
+        <!-- Date range first so it stays above loading text, skeletons, and charts -->
+        <section class="performance-date-range-module" id="performanceDateRangeModule" aria-label="Date range for performance">
+            <h3 class="performance-module-heading">Date range</h3>
+            <div class="date-range" role="group" aria-label="Performance date range">
+                <span class="summary-label">From</span>
+                <input type="date" id="startDate" name="startDate" aria-label="Start date">
+                <span class="date-range-arrow" aria-hidden="true">→</span>
+                <span class="summary-label">To</span>
+                <input type="date" id="endDate" name="endDate" aria-label="End date">
+                <button type="button" id="applyDates">Apply</button>
+            </div>
+        </section>
         <div class="loading" id="loading">Loading…</div>
         <div class="performance-skeletons" id="performanceSkeletons">
             <div class="skeleton-card">
@@ -1633,18 +1645,6 @@
             </div>
         </div>
         <div class="error" id="error" style="display: none;"></div>
-        <!-- Date range module (above Revenue graph) -->
-        <section class="performance-date-range-module" id="performanceDateRangeModule" aria-label="Date range for performance">
-            <h3 class="performance-module-heading">Date range</h3>
-            <div class="date-range" role="group" aria-label="Performance date range">
-                <span class="summary-label">From</span>
-                <input type="date" id="startDate" name="startDate" aria-label="Start date">
-                <span class="date-range-arrow" aria-hidden="true">→</span>
-                <span class="summary-label">To</span>
-                <input type="date" id="endDate" name="endDate" aria-label="End date">
-                <button type="button" id="applyDates">Apply</button>
-            </div>
-        </section>
         <div class="mtd-chart-card" id="mtdChartCard" style="display: none;">
             <div class="mtd-chart-title" id="mtdChartTitle"></div>
             <div class="mtd-chart-description" id="mtdChartDescription"></div>

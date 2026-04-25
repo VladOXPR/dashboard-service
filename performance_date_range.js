@@ -1,6 +1,6 @@
 /**
  * Performance dashboard: date range selection module.
- * Placed in the DOM directly above the Revenue chart (#mtdChartCard).
+ * Placed at the top of the performance view (#viewPerformance), above loading/skeletons and the Revenue chart.
  */
 (function () {
     'use strict';
