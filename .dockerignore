@@ -1,6 +1,7 @@
 node_modules
 npm-debug.log
 .env
+.env.local
 .git
 .gitignore
 .vercel
@@ -9,3 +10,8 @@ npm-debug.log
 coverage
 .vscode
 .idea
+.next
+out
+build
+dist
+*.tsbuildinfo

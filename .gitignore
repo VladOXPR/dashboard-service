@@ -1,5 +1,16 @@
 .env
+.env.local
 server.log
 qrStats.json
 energoToken.json
 node_modules/
+
+.next/
+out/
+build/
+dist/
+
+*.tsbuildinfo
+next-env.d.ts.bak
+
+.DS_Store
