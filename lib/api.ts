@@ -28,6 +28,10 @@ export type StationRecord = {
   filled_slots?: number | string;
   open_slots?: number | string;
   online?: boolean;
+  address?: string | null;
+  location?: string | null;
+  stripe_id?: string | null;
+  weekday_hours?: unknown;
 };
 
 export type UserRecord = {
@@ -92,6 +96,42 @@ export type TicketRecord = {
 
 export function fetchAllStations() {
   return api<StationRecord[]>("/api/stations");
+}
+export function fetchStation(id: string) {
+  return api<StationRecord>(`/api/stations/${encodeURIComponent(id)}`);
+}
+
+export function stationsFromApiJson(json: unknown): StationRecord[] {
+  if (!json || typeof json !== "object") return [];
+  const obj = json as { data?: unknown; Data?: unknown };
+  if (Array.isArray(obj.data)) return obj.data as StationRecord[];
+  if (Array.isArray(obj.Data)) return obj.Data as StationRecord[];
+  return [];
+}
+
+export function stationFromApiJson(json: unknown): StationRecord | null {
+  if (!json || typeof json !== "object") return null;
+  const obj = json as { data?: unknown; Data?: unknown };
+  const d = obj.data ?? obj.Data;
+  if (d && typeof d === "object" && !Array.isArray(d)) return d as StationRecord;
+  return null;
+}
+
+export function stationHasAddress(s: StationRecord | null | undefined): boolean {
+  if (!s || typeof s !== "object") return false;
+  const addr = s.address != null ? String(s.address).trim() : "";
+  if (addr) return true;
+  const loc = s.location != null ? String(s.location).trim() : "";
+  return Boolean(loc);
+}
+
+export function stationHasStripeId(s: StationRecord | null | undefined): boolean {
+  if (!s || typeof s !== "object") return false;
+  return s.stripe_id != null && String(s.stripe_id).trim() !== "";
+}
+
+export function stationMissingAddressOrStripe(s: StationRecord | null | undefined): boolean {
+  return !stationHasAddress(s) || !stationHasStripeId(s);
 }
 export function fetchAllUsers() {
   return api<UserRecord[]>("/api/users");

@@ -5,16 +5,67 @@ import {
   deleteStation,
   fetchAllStations,
   popAll,
+  stationsFromApiJson,
+  stationMissingAddressOrStripe,
   type StationRecord,
 } from "@/lib/api";
 import SkeletonTable from "@/components/skeletons/SkeletonTable";
 import StationFormDrawer from "@/components/drawers/StationFormDrawer";
 import ConfirmModal from "@/components/modals/ConfirmModal";
 
+function normalizeWeekdayHours(row: StationRecord): StationRecord {
+  if (!row || typeof row !== "object") return row;
+  const out: StationRecord = { ...row };
+  const wh = out.weekday_hours;
+  if (wh == null || wh === "") {
+    out.weekday_hours = null;
+  } else if (typeof wh === "string") {
+    try {
+      out.weekday_hours = JSON.parse(wh);
+    } catch {
+      out.weekday_hours = null;
+    }
+  }
+  return out;
+}
+
+function stationFieldValueForExport(v: unknown): string | number | boolean {
+  if (v === null || v === undefined) return "";
+  if (typeof v === "object") return JSON.stringify(v);
+  if (typeof v === "string" || typeof v === "number" || typeof v === "boolean") return v;
+  return String(v);
+}
+
+function stationsRowsForXlsx(list: StationRecord[]): Record<string, string | number | boolean>[] {
+  const rows = (list || []).map((row) => (row && typeof row === "object" ? normalizeWeekdayHours(row) : row));
+  const keySet: Record<string, true> = {};
+  rows.forEach((row) => {
+    if (row && typeof row === "object") {
+      Object.keys(row).forEach((k) => {
+        keySet[k] = true;
+      });
+    }
+  });
+  const keys = Object.keys(keySet).sort();
+  return rows.map((row) => {
+    const o: Record<string, string | number | boolean> = {};
+    keys.forEach((k) => {
+      if (!row || typeof row !== "object") {
+        o[k] = "";
+        return;
+      }
+      o[k] = stationFieldValueForExport((row as Record<string, unknown>)[k]);
+    });
+    return o;
+  });
+}
+
 export default function StationsView() {
   const [stations, setStations] = useState<StationRecord[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [warning, setWarning] = useState<string | null>(null);
+  const [exporting, setExporting] = useState(false);
 
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [drawerInitial, setDrawerInitial] = useState<StationRecord | null>(null);
@@ -27,13 +78,7 @@ export default function StationsView() {
     setError(null);
     try {
       const json = await fetchAllStations();
-      const data = json.data;
-      const list: StationRecord[] = Array.isArray(data)
-        ? (data as StationRecord[])
-        : Array.isArray((json as unknown as { Data?: StationRecord[] }).Data)
-        ? ((json as unknown as { Data?: StationRecord[] }).Data as StationRecord[])
-        : [];
-      setStations(list);
+      setStations(stationsFromApiJson(json));
     } catch (e) {
       console.error(e);
       setError("Failed to load stations. Please try again.");
@@ -84,9 +129,48 @@ export default function StationsView() {
     }
   }
 
+  async function handleExport() {
+    setError(null);
+    setExporting(true);
+    try {
+      const xlsx = await import("xlsx");
+      const json = await fetchAllStations();
+      const list = stationsFromApiJson(json);
+      const rows = stationsRowsForXlsx(list);
+      const wb = xlsx.utils.book_new();
+      const ws = xlsx.utils.json_to_sheet(rows.length ? rows : [{}]);
+      xlsx.utils.book_append_sheet(wb, ws, "Stations");
+      const now = new Date();
+      const y = now.getFullYear();
+      const mo = String(now.getMonth() + 1).padStart(2, "0");
+      const da = String(now.getDate()).padStart(2, "0");
+      xlsx.writeFile(wb, `cuub-stations-${y}-${mo}-${da}.xlsx`);
+    } catch (e) {
+      console.error(e);
+      setError(
+        (e as Error)?.message
+          ? (e as Error).message
+          : "Export failed. Please try again.",
+      );
+    } finally {
+      setExporting(false);
+    }
+  }
+
+  const stationCount = stations ? stations.length : 0;
+
   return (
     <main className="view-station-mgmt">
       <div className="stations-menubar">
+        <button
+          type="button"
+          className="stations-menubar-item"
+          onClick={handleExport}
+          disabled={exporting}
+          aria-busy={exporting || undefined}
+        >
+          {exporting ? "Exporting…" : "Export"}
+        </button>
         <button type="button" className="stations-menubar-item" onClick={openAdd}>
           Add station
         </button>
@@ -99,6 +183,15 @@ export default function StationsView() {
           Map
         </a>
       </div>
+      {warning ? (
+        <div
+          className="error"
+          id="mgmtError"
+          style={{ background: "rgba(239,68,68,0.15)", color: "#fca5a5" }}
+        >
+          {warning}
+        </div>
+      ) : null}
       {loading ? <SkeletonTable rows={5} /> : null}
       {error ? <div className="error">{error}</div> : null}
       {!loading && stations ? (
@@ -109,7 +202,12 @@ export default function StationsView() {
             <table className="station-mgmt-table">
               <thead>
                 <tr>
-                  <th />
+                  <th
+                    className="station-mgmt-total-header"
+                    title={`Total stations: ${stationCount}`}
+                  >
+                    {stationCount}
+                  </th>
                   <th>Title</th>
                   <th />
                   <th>ID</th>
@@ -121,6 +219,7 @@ export default function StationsView() {
               <tbody>
                 {stations.map((s) => {
                   const isOnline = s.online === true;
+                  const missing = stationMissingAddressOrStripe(s);
                   return (
                     <tr key={String(s.id)}>
                       <td className="station-status-cell">
@@ -131,7 +230,18 @@ export default function StationsView() {
                           aria-label={isOnline ? "Online" : "Offline"}
                         />
                       </td>
-                      <td>{s.title ?? ""}</td>
+                      <td>
+                        {missing ? (
+                          <span
+                            className="station-mgmt-missing-mark"
+                            aria-label="Missing address or Stripe ID"
+                            title="Missing address or Stripe ID"
+                          >
+                            !
+                          </span>
+                        ) : null}
+                        {s.title ?? ""}
+                      </td>
                       <td>
                         <button
                           type="button"
@@ -178,6 +288,7 @@ export default function StationsView() {
         initial={drawerInitial}
         onClose={() => setDrawerOpen(false)}
         onSaved={() => load()}
+        onWarning={(msg) => setWarning(msg)}
       />
 
       <ConfirmModal

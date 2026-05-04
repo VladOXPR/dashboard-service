@@ -943,10 +943,32 @@
   .station-mgmt-table tr:last-child td {
     border-bottom: none;
   }
+  .station-mgmt-table th.station-mgmt-total-header {
+    text-align: center;
+    vertical-align: middle;
+    color: #737373;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .station-mgmt-missing-mark {
+    color: #dc2626;
+    margin-right: 0.25em;
+    font-weight: 700;
+  }
+  .stations-menubar-item:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+  }
+  .stations-menubar-item:disabled:hover {
+    background: transparent;
+  }
   .station-mgmt-table .station-status-cell {
     width: 1%;
+    padding-left: 0.5rem;
     padding-right: 0.5rem;
     vertical-align: middle;
+    text-align: center;
   }
   .station-status-dot {
     display: inline-block;
