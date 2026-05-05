@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Edit01, Trash01, Zap } from "@untitledui/icons";
 import {
   deleteStation,
   fetchAllStations,
@@ -9,9 +10,14 @@ import {
   stationMissingAddressOrStripe,
   type StationRecord,
 } from "@/lib/api";
+import { usePagedItems } from "@/lib/hooks/usePagedItems";
 import SkeletonTable from "@/components/skeletons/SkeletonTable";
 import StationFormDrawer from "@/components/drawers/StationFormDrawer";
 import ConfirmModal from "@/components/modals/ConfirmModal";
+import { Table, TableCard } from "@/components/application/table/table";
+import { PaginationPageMinimalCenter } from "@/components/application/pagination/pagination";
+import { Badge, BadgeWithDot } from "@/components/base/badges/badges";
+import { ButtonUtility } from "@/components/base/buttons/button-utility";
 
 function normalizeWeekdayHours(row: StationRecord): StationRecord {
   if (!row || typeof row !== "object") return row;
@@ -59,6 +65,8 @@ function stationsRowsForXlsx(list: StationRecord[]): Record<string, string | num
     return o;
   });
 }
+
+type Row = StationRecord & { rowKey: string };
 
 export default function StationsView() {
   const [stations, setStations] = useState<StationRecord[] | null>(null);
@@ -157,7 +165,8 @@ export default function StationsView() {
     }
   }
 
-  const stationCount = stations ? stations.length : 0;
+  const rows: Row[] = (stations ?? []).map((s, i) => ({ ...s, rowKey: String(s.id ?? `idx-${i}`) }));
+  const { page, setPage, totalPages, pagedItems, totalItems } = usePagedItems(rows, 10);
 
   return (
     <main className="view-station-mgmt">
@@ -183,6 +192,7 @@ export default function StationsView() {
           Map
         </a>
       </div>
+
       {warning ? (
         <div
           className="error"
@@ -192,96 +202,105 @@ export default function StationsView() {
           {warning}
         </div>
       ) : null}
-      {loading ? <SkeletonTable rows={5} /> : null}
-      {error ? <div className="error">{error}</div> : null}
-      {!loading && stations ? (
-        <div id="stationMgmtList">
-          {stations.length === 0 ? (
-            <p style={{ color: "#a3a3a3" }}>No stations found.</p>
-          ) : (
-            <table className="station-mgmt-table">
-              <thead>
-                <tr>
-                  <th
-                    className="station-mgmt-total-header"
-                    title={`Total stations: ${stationCount}`}
-                  >
-                    {stationCount}
-                  </th>
-                  <th>Title</th>
-                  <th />
-                  <th>ID</th>
-                  <th>Filled</th>
-                  <th>Open</th>
-                  <th />
-                </tr>
-              </thead>
-              <tbody>
-                {stations.map((s) => {
-                  const isOnline = s.online === true;
-                  const missing = stationMissingAddressOrStripe(s);
-                  return (
-                    <tr key={String(s.id)}>
-                      <td className="station-status-cell">
-                        <span
-                          className={
-                            "station-status-dot " + (isOnline ? "online" : "offline")
-                          }
-                          aria-label={isOnline ? "Online" : "Offline"}
-                        />
-                      </td>
-                      <td>
-                        {missing ? (
+
+      <TableCard.Root>
+        <TableCard.Header
+          title="Stations"
+          badge={
+            <Badge size="sm" color="brand" type="pill-color">
+              {totalItems} {totalItems === 1 ? "station" : "stations"}
+            </Badge>
+          }
+        />
+
+        {loading ? (
+          <div className="px-4 py-3 md:px-6 md:py-4">
+            <SkeletonTable rows={5} />
+          </div>
+        ) : error ? (
+          <div className="error" style={{ margin: "0.75rem" }}>{error}</div>
+        ) : rows.length === 0 ? (
+          <p className="px-4 py-6 text-sm text-text-tertiary md:px-6">No stations found.</p>
+        ) : (
+          <>
+            <Table aria-label="Stations" selectionMode="multiple">
+              <Table.Header>
+                <Table.Head id="status" label="Status" className="w-24" />
+                <Table.Head id="title" label="Title" isRowHeader className="w-full" />
+                <Table.Head id="id" label="ID" />
+                <Table.Head id="filled" label="Filled" tooltip="Number of slots that currently hold a powerbank." />
+                <Table.Head id="open" label="Open" tooltip="Number of empty slots available for returns." />
+                <Table.Head id="actions" label="" />
+              </Table.Header>
+
+              <Table.Body items={pagedItems}>
+                {(item) => (
+                  <Table.Row id={item.rowKey}>
+                    <Table.Cell>
+                      <BadgeWithDot
+                        size="sm"
+                        type="pill-color"
+                        color={item.online === true ? "success" : "error"}
+                      >
+                        {item.online === true ? "Online" : "Offline"}
+                      </BadgeWithDot>
+                    </Table.Cell>
+                    <Table.Cell>
+                      <div className="flex items-center gap-2">
+                        {stationMissingAddressOrStripe(item) ? (
                           <span
-                            className="station-mgmt-missing-mark"
+                            className="text-fg-error-primary font-bold"
                             aria-label="Missing address or Stripe ID"
                             title="Missing address or Stripe ID"
                           >
                             !
                           </span>
                         ) : null}
-                        {s.title ?? ""}
-                      </td>
-                      <td>
-                        <button
-                          type="button"
-                          className="btn-dispense-all"
-                          aria-label="Dispense all powerbanks for station"
-                          onClick={() => setDispenseTarget(s)}
-                        >
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src="/assets/dispense-all.png" alt="" />
-                        </button>
-                      </td>
-                      <td>{String(s.id ?? "")}</td>
-                      <td>{s.filled_slots != null ? s.filled_slots : "—"}</td>
-                      <td>{s.open_slots != null ? s.open_slots : "—"}</td>
-                      <td>
-                        <div className="table-actions">
-                          <button
-                            type="button"
-                            className="btn-edit"
-                            onClick={() => openEdit(s)}
-                          >
-                            Edit
-                          </button>
-                          <button
-                            type="button"
-                            className="btn-delete"
-                            onClick={() => setDeleteTarget(s)}
-                          >
-                            Delete
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          )}
-        </div>
-      ) : null}
+                        <span className="font-semibold text-text-primary">{item.title ?? ""}</span>
+                      </div>
+                    </Table.Cell>
+                    <Table.Cell className="font-mono text-text-tertiary">{String(item.id ?? "")}</Table.Cell>
+                    <Table.Cell>{item.filled_slots != null ? item.filled_slots : "—"}</Table.Cell>
+                    <Table.Cell>{item.open_slots != null ? item.open_slots : "—"}</Table.Cell>
+                    <Table.Cell>
+                      <div className="flex justify-end gap-1">
+                        <ButtonUtility
+                          size="xs"
+                          color="tertiary"
+                          icon={Zap}
+                          tooltip="Dispense all powerbanks"
+                          onPress={() => setDispenseTarget(item)}
+                        />
+                        <ButtonUtility
+                          size="xs"
+                          color="tertiary"
+                          icon={Edit01}
+                          tooltip="Edit"
+                          onPress={() => openEdit(item)}
+                        />
+                        <ButtonUtility
+                          size="xs"
+                          color="tertiary"
+                          icon={Trash01}
+                          tooltip="Delete"
+                          onPress={() => setDeleteTarget(item)}
+                        />
+                      </div>
+                    </Table.Cell>
+                  </Table.Row>
+                )}
+              </Table.Body>
+            </Table>
+
+            <PaginationPageMinimalCenter
+              page={page}
+              total={totalPages}
+              onPageChange={setPage}
+              className="px-4 py-3 md:px-6 md:pt-3 md:pb-4"
+            />
+          </>
+        )}
+      </TableCard.Root>
 
       <StationFormDrawer
         open={drawerOpen}

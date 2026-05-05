@@ -1,6 +1,8 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+@import "../styles/theme.css";
+
+@plugin "tailwindcss-animate";
+@plugin "tailwindcss-react-aria-components";
 
 @layer base {
   *,
@@ -267,22 +269,288 @@
     gap: 1.5rem 2rem;
   }
   .performance-date-range-module {
-    background: #000;
-    border: 1px solid #262626;
-    border-radius: 12px;
-    padding: 1rem 1.25rem;
     margin-bottom: 1rem;
   }
-  .performance-date-range-module .performance-module-heading {
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: #a3a3a3;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    margin: 0 0 0.75rem 0;
+
+  .date-range-picker {
+    position: relative;
+    display: inline-block;
   }
-  .performance-date-range-module .date-range {
-    margin: 0;
+  .date-range-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.625rem;
+    padding: 0.55rem 1rem;
+    border: 1px solid #262626;
+    border-radius: 9999px;
+    background: #000;
+    color: #e5e5e5;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    line-height: 1;
+    transition: border-color 0.15s ease, background 0.15s ease;
+  }
+  .date-range-trigger:hover {
+    border-color: #404040;
+    background: #0a0a0a;
+  }
+  .date-range-trigger:focus-visible {
+    outline: 2px solid #525252;
+    outline-offset: 2px;
+  }
+  .date-range-trigger svg {
+    color: #a3a3a3;
+    flex-shrink: 0;
+  }
+
+  .date-range-popover {
+    position: absolute;
+    top: calc(100% + 0.5rem);
+    left: 0;
+    z-index: 1500;
+    display: flex;
+    background: #0a0a0a;
+    border: 1px solid #262626;
+    border-radius: 14px;
+    box-shadow: 0 24px 48px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.02);
+    overflow: hidden;
+    min-width: min(960px, 92vw);
+  }
+  .date-range-presets {
+    display: flex;
+    flex-direction: column;
+    padding: 0.75rem;
+    border-right: 1px solid #1a1a1a;
+    background: #050505;
+    min-width: 160px;
+    flex-shrink: 0;
+  }
+  .date-range-preset {
+    appearance: none;
+    background: transparent;
+    border: none;
+    color: #d4d4d8;
+    text-align: left;
+    padding: 0.55rem 0.85rem;
+    font-size: 0.9rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+  .date-range-preset:hover {
+    background: #1a1a1a;
+    color: #fff;
+  }
+  .date-range-preset.active {
+    background: rgba(168, 85, 247, 0.15);
+    color: #d8b4fe;
+  }
+
+  .date-range-cal-wrap {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+  }
+  .date-range-cal-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+    padding: 1rem 1.25rem;
+  }
+  .cal-month {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .cal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 0.25rem;
+    height: 28px;
+  }
+  .cal-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #e5e5e5;
+    text-align: center;
+    flex: 1;
+  }
+  .cal-nav {
+    appearance: none;
+    background: transparent;
+    border: none;
+    color: #a3a3a3;
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+  .cal-nav:hover {
+    background: #1f1f1f;
+    color: #fff;
+  }
+  .cal-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    text-align: center;
+    color: #a3a3a3;
+    font-size: 0.8rem;
+    font-weight: 500;
+    padding: 0 0.25rem;
+  }
+  .cal-weekday {
+    padding: 0.25rem 0;
+  }
+  .cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    padding: 0 0.25rem;
+  }
+  .cal-cell {
+    appearance: none;
+    background: transparent;
+    border: none;
+    color: #d4d4d8;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    position: relative;
+    font-size: 0.9rem;
+    border-radius: 0;
+    padding: 0;
+  }
+  .cal-cell:hover .cal-cell-num {
+    color: #fff;
+  }
+  .cal-cell-num {
+    position: relative;
+    z-index: 1;
+    width: 32px;
+    height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 9999px;
+  }
+  .cal-cell-out {
+    color: #525252;
+    pointer-events: none;
+    opacity: 0;
+  }
+  .cal-cell-today-dot {
+    position: absolute;
+    bottom: 4px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 3px;
+    height: 3px;
+    border-radius: 9999px;
+    background: #a3a3a3;
+    z-index: 2;
+  }
+  .cal-cell-in-range {
+    background: #1f1330;
+  }
+  .cal-cell-in-range.cal-cell-start {
+    border-top-left-radius: 9999px;
+    border-bottom-left-radius: 9999px;
+  }
+  .cal-cell-in-range.cal-cell-end {
+    border-top-right-radius: 9999px;
+    border-bottom-right-radius: 9999px;
+  }
+  .cal-cell-start .cal-cell-num,
+  .cal-cell-end .cal-cell-num {
+    background: #a855f7;
+    color: #fff;
+    font-weight: 600;
+  }
+  .cal-cell-single .cal-cell-num {
+    background: #a855f7;
+    color: #fff;
+  }
+  .cal-cell-start .cal-cell-today-dot,
+  .cal-cell-end .cal-cell-today-dot {
+    background: #fff;
+    bottom: 6px;
+  }
+
+  .date-range-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.875rem 1.25rem 1rem;
+    border-top: 1px solid #1a1a1a;
+    flex-wrap: wrap;
+  }
+  .date-range-inputs {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .date-range-inputs input[type="date"] {
+    background: #0f0f10;
+    border: 1px solid #262626;
+    color: #e5e5e5;
+    padding: 0.45rem 0.65rem;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    color-scheme: dark;
+  }
+  .date-range-inputs input[type="date"]:focus {
+    outline: none;
+    border-color: #a855f7;
+  }
+  .date-range-dash {
+    color: #525252;
+  }
+  .date-range-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .date-range-cancel {
+    appearance: none;
+    background: transparent;
+    border: 1px solid #262626;
+    color: #e5e5e5;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+  }
+  .date-range-cancel:hover {
+    background: #1a1a1a;
+    border-color: #404040;
+  }
+  .date-range-apply {
+    appearance: none;
+    background: #a855f7;
+    border: none;
+    color: #fff;
+    padding: 0.5rem 1.1rem;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .date-range-apply:hover {
+    background: #9333ea;
+  }
+  .date-range-apply:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
 
   .summary-item {
@@ -525,44 +793,6 @@
   .station-performance-section {
     margin-top: 1.5rem;
   }
-  .station-performance-card {
-    background: #000;
-    border: 1px solid #262626;
-    border-radius: 12px;
-    padding: 1.25rem;
-    margin-bottom: 1.5rem;
-  }
-  .station-performance-card .skeleton-table-wrap {
-    border: none;
-    border-radius: 0;
-  }
-  .station-performance-table {
-    width: 100%;
-    border-collapse: collapse;
-    background: #000;
-  }
-  .station-performance-table th,
-  .station-performance-table td {
-    padding: 0.75rem 1rem;
-    text-align: left;
-    border-bottom: 1px solid #262626;
-  }
-  .station-performance-table th {
-    background: #0a0a0a;
-    color: #a3a3a3;
-    font-size: 0.85rem;
-    font-weight: 600;
-  }
-  .station-performance-table td {
-    background: #000;
-  }
-  .station-performance-table tr:last-child td {
-    border-bottom: none;
-  }
-  .station-performance-table .station-performance-money {
-    font-weight: 600;
-    color: #e5e5e5;
-  }
 
   .chart-tooltip-custom {
     position: absolute;
@@ -733,46 +963,6 @@
     height: 200px;
   }
 
-  .scans-table {
-    width: 100%;
-    border-collapse: collapse;
-    background: #000;
-    border-radius: 12px;
-    overflow: hidden;
-    border: 2px solid #404040;
-  }
-  .scans-table tr {
-    background: #000;
-  }
-  .scans-table th,
-  .scans-table td {
-    padding: 0.75rem 1rem;
-    text-align: left;
-    border-bottom: 1px solid #262626;
-  }
-  .scans-table td {
-    background: #000;
-  }
-  .scans-table th {
-    background: #000;
-    color: #e5e5e5;
-    font-size: 0.85rem;
-    font-weight: 700;
-  }
-  .scans-table tr:last-child td {
-    border-bottom: none;
-  }
-  .scans-table-type {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-  .scans-table-type-dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 2px;
-    flex-shrink: 0;
-  }
   .chart-tooltip-type-with-color {
     display: inline-flex;
     align-items: center;
@@ -783,39 +973,6 @@
     height: 10px;
     border-radius: 2px;
     flex-shrink: 0;
-  }
-
-  .pos-test-table-wrap {
-    overflow-x: auto;
-  }
-  .pos-test-empty {
-    color: #a3a3a3;
-  }
-  .pos-test-status {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 0.85rem;
-  }
-  .pos-test-status-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    flex-shrink: 0;
-  }
-  .pos-test-status-dot.active {
-    background: #22c55e;
-  }
-  .pos-test-status-dot.ended {
-    background: #737373;
-  }
-  .pos-test-cell-mono {
-    font-family: "SF Mono", Menlo, Consolas, monospace;
-    font-size: 0.8rem;
-    color: #d4d4d4;
-  }
-  .pos-test-cell-muted {
-    color: #737373;
   }
 
   .station-ids-list {
@@ -911,129 +1068,12 @@
     color: inherit;
   }
 
-  .station-mgmt-table {
-    width: 100%;
-    border-collapse: collapse;
-    background: #000;
-    border-radius: 12px;
-    overflow: hidden;
-    border: 2px solid #404040;
-  }
-  .station-mgmt-table tr {
-    background: #000;
-  }
-  .station-mgmt-table th,
-  .station-mgmt-table td {
-    padding: 0.75rem 1rem;
-    text-align: left;
-    border-bottom: 1px solid #262626;
-  }
-  .station-mgmt-table td {
-    background: #000;
-  }
-  .station-mgmt-table td:nth-child(2) {
-    font-weight: 700;
-  }
-  .station-mgmt-table th {
-    background: #000;
-    color: #e5e5e5;
-    font-size: 0.85rem;
-    font-weight: 700;
-  }
-  .station-mgmt-table tr:last-child td {
-    border-bottom: none;
-  }
-  .station-mgmt-table th.station-mgmt-total-header {
-    text-align: center;
-    vertical-align: middle;
-    color: #737373;
-    font-weight: 600;
-    font-variant-numeric: tabular-nums;
-    white-space: nowrap;
-  }
-  .station-mgmt-missing-mark {
-    color: #dc2626;
-    margin-right: 0.25em;
-    font-weight: 700;
-  }
   .stations-menubar-item:disabled {
     opacity: 0.65;
     cursor: not-allowed;
   }
   .stations-menubar-item:disabled:hover {
     background: transparent;
-  }
-  .station-mgmt-table .station-status-cell {
-    width: 1%;
-    padding-left: 0.5rem;
-    padding-right: 0.5rem;
-    vertical-align: middle;
-    text-align: center;
-  }
-  .station-status-dot {
-    display: inline-block;
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-  }
-  .station-status-dot.online {
-    background: #22c55e;
-  }
-  .station-status-dot.offline {
-    background: #ef4444;
-  }
-  .station-mgmt-table .table-actions {
-    display: flex;
-    gap: 5px;
-  }
-  .station-mgmt-table .btn-edit,
-  .station-mgmt-table .btn-delete {
-    padding: 0.4rem 0.75rem;
-    font-size: 0.85rem;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    margin-right: 0.5rem;
-  }
-  .station-mgmt-table .btn-dispense-all {
-    padding: 0;
-    width: 42px;
-    height: 38px;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    background: #262626;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-  }
-  .station-mgmt-table .btn-dispense-all:hover {
-    background: #333;
-  }
-  .station-mgmt-table .btn-dispense-all:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-  }
-  .station-mgmt-table .btn-dispense-all img {
-    width: 24px;
-    height: 24px;
-    object-fit: contain;
-    display: block;
-  }
-  .station-mgmt-table .btn-edit {
-    background: #262626;
-    color: #e5e5e5;
-  }
-  .station-mgmt-table .btn-edit:hover {
-    background: #333;
-  }
-  .station-mgmt-table .btn-delete {
-    background: #3c1c1d;
-    color: #ff6467;
-  }
-  .station-mgmt-table .btn-delete:hover {
-    background: #4a2324;
-    color: #ff7a7c;
   }
 
   .hover-card-trigger {
@@ -1713,6 +1753,46 @@
     width: 100%;
     min-height: 44px;
   }
+  .date-range-popover {
+    flex-direction: column;
+    min-width: 0;
+    width: calc(100vw - 2rem);
+    max-width: 420px;
+    left: 0;
+  }
+  .date-range-presets {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    border-right: none;
+    border-bottom: 1px solid #1a1a1a;
+    min-width: 0;
+    padding: 0.5rem;
+  }
+  .date-range-preset {
+    padding: 0.4rem 0.65rem;
+    font-size: 0.8rem;
+  }
+  .date-range-cal-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    padding: 0.75rem;
+  }
+  .date-range-cal-grid > .cal-month:nth-child(2) {
+    display: none;
+  }
+  .date-range-footer {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+    padding: 0.75rem;
+  }
+  .date-range-inputs {
+    justify-content: center;
+  }
+  .date-range-actions {
+    justify-content: flex-end;
+  }
   main {
     padding: 1rem;
     max-width: 100%;
@@ -1726,29 +1806,6 @@
   }
   .station-title {
     font-size: 1rem;
-  }
-  #stationMgmtList,
-  #hostMgmtList,
-  #scansList,
-  #posTestList {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    margin: 0 -1rem;
-    padding: 0 1rem;
-  }
-  .station-mgmt-table,
-  .scans-table {
-    min-width: 520px;
-    font-size: 0.85rem;
-  }
-  .station-mgmt-table th,
-  .station-mgmt-table td {
-    padding: 0.6rem 0.5rem;
-  }
-  .station-mgmt-table .btn-edit,
-  .station-mgmt-table .btn-delete {
-    min-height: 44px;
-    padding: 0.6rem 0.75rem;
   }
   .drawer-content {
     max-height: 96vh;

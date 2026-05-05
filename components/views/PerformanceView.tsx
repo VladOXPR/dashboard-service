@@ -19,6 +19,10 @@ import PerformanceDateRange, {
 import PerformanceSkeletons from "@/components/skeletons/PerformanceSkeletons";
 import SkeletonTable from "@/components/skeletons/SkeletonTable";
 import MtdChart from "@/components/charts/MtdChart";
+import { Table, TableCard } from "@/components/application/table/table";
+import { PaginationPageMinimalCenter } from "@/components/application/pagination/pagination";
+import { Badge } from "@/components/base/badges/badges";
+import { usePagedItems } from "@/lib/hooks/usePagedItems";
 
 function isTestStationTitle(title: string | undefined): boolean {
   return String(title ?? "").trim().toLowerCase() === "test station";
@@ -199,6 +203,7 @@ export default function PerformanceView() {
   const stationPerfRows: StationPerfRow[] = showStationList
     ? buildAdminStationPerfRows(allStations, allRes)
     : [];
+  const { page, setPage, totalPages, pagedItems, totalItems } = usePagedItems(stationPerfRows, 10);
 
   return (
     <main className="view-performance">
@@ -226,31 +231,46 @@ export default function PerformanceView() {
 
       {showStationList ? (
         <section className="station-performance-section">
-          <div className="station-performance-card">
+          <TableCard.Root>
+            <TableCard.Header
+              title="Stations"
+              badge={
+                <Badge size="sm" color="brand" type="pill-color">
+                  {totalItems} {totalItems === 1 ? "station" : "stations"}
+                </Badge>
+              }
+            />
             {stationListLoading ? (
-              <SkeletonTable rows={5} withSecondary={false} />
-            ) : stationPerfRows.length > 0 ? (
-              <table
-                className="station-performance-table"
-                aria-label="Station revenue for selected range"
-              >
-                <thead>
-                  <tr>
-                    <th>Station</th>
-                    <th>Revenue</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {stationPerfRows.map((row) => (
-                    <tr key={row.id}>
-                      <td>{row.title}</td>
-                      <td className="station-performance-money">${row.money}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            ) : null}
-          </div>
+              <div className="px-4 py-3 md:px-6 md:py-4">
+                <SkeletonTable rows={5} withSecondary={false} />
+              </div>
+            ) : stationPerfRows.length === 0 ? (
+              <p className="px-4 py-6 text-sm text-text-tertiary md:px-6">No station revenue data for this range.</p>
+            ) : (
+              <>
+                <Table aria-label="Station revenue for selected range">
+                  <Table.Header>
+                    <Table.Head id="station" label="Station" isRowHeader className="w-full" />
+                    <Table.Head id="revenue" label="Revenue" />
+                  </Table.Header>
+                  <Table.Body items={pagedItems}>
+                    {(row) => (
+                      <Table.Row id={row.id}>
+                        <Table.Cell className="font-medium">{row.title}</Table.Cell>
+                        <Table.Cell className="font-semibold text-text-primary tabular-nums">${row.money}</Table.Cell>
+                      </Table.Row>
+                    )}
+                  </Table.Body>
+                </Table>
+                <PaginationPageMinimalCenter
+                  page={page}
+                  total={totalPages}
+                  onPageChange={setPage}
+                  className="px-4 py-3 md:px-6 md:pt-3 md:pb-4"
+                />
+              </>
+            )}
+          </TableCard.Root>
         </section>
       ) : null}
     </main>
