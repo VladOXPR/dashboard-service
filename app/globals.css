@@ -343,8 +343,8 @@
     color: #fff;
   }
   .date-range-preset.active {
-    background: rgba(168, 85, 247, 0.15);
-    color: #d8b4fe;
+    background: rgba(59, 130, 246, 0.15);
+    color: #93c5fd;
   }
 
   .date-range-cal-wrap {
@@ -458,7 +458,7 @@
     z-index: 2;
   }
   .cal-cell-in-range {
-    background: #1f1330;
+    background: #0f1a30;
   }
   .cal-cell-in-range.cal-cell-start {
     border-top-left-radius: 9999px;
@@ -470,12 +470,12 @@
   }
   .cal-cell-start .cal-cell-num,
   .cal-cell-end .cal-cell-num {
-    background: #a855f7;
+    background: #3b82f6;
     color: #fff;
     font-weight: 600;
   }
   .cal-cell-single .cal-cell-num {
-    background: #a855f7;
+    background: #3b82f6;
     color: #fff;
   }
   .cal-cell-start .cal-cell-today-dot,
@@ -509,7 +509,7 @@
   }
   .date-range-inputs input[type="date"]:focus {
     outline: none;
-    border-color: #a855f7;
+    border-color: #3b82f6;
   }
   .date-range-dash {
     color: #525252;
@@ -536,7 +536,7 @@
   }
   .date-range-apply {
     appearance: none;
-    background: #a855f7;
+    background: #3b82f6;
     border: none;
     color: #fff;
     padding: 0.5rem 1.1rem;
@@ -546,7 +546,7 @@
     cursor: pointer;
   }
   .date-range-apply:hover {
-    background: #9333ea;
+    background: #2563eb;
   }
   .date-range-apply:disabled {
     opacity: 0.5;

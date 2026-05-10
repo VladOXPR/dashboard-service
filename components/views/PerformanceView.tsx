@@ -210,12 +210,10 @@ export default function PerformanceView() {
       <PerformanceDateRange
         start={start}
         end={end}
+        loading={loading || stationListLoading}
         onChange={({ start: s, end: e }) => {
           setStart(s);
           setEnd(e);
-        }}
-        onApply={() => {
-          load();
         }}
       />
       {loading ? <PerformanceSkeletons /> : null}
