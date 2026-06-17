@@ -24,34 +24,27 @@ import { PaginationPageMinimalCenter } from "@/components/application/pagination
 import { Badge } from "@/components/base/badges/badges";
 import { usePagedItems } from "@/lib/hooks/usePagedItems";
 
-function isTestStationTitle(title: string | undefined): boolean {
-  return String(title ?? "").trim().toLowerCase() === "test station";
+function parseMoney(v: unknown): number {
+  if (v == null || v === "") return 0;
+  const num = parseFloat(String(v).replace(/[$,]/g, ""));
+  return Number.isNaN(num) ? 0 : num;
 }
 
-async function computeAvgPerStation(allRes: { success?: boolean; data?: StationRevenueRow[] } | null) {
+async function computeAvgPerStation(mtdPayload: RentMtdPayload | null) {
   try {
     const stationsJson = await fetchAllStations();
     const allStations = stationsFromApiJson(stationsJson);
-    const networkStations = allStations.filter((s) => !isTestStationTitle(s.title));
-    const n = networkStations.length;
+    const n = allStations.length;
     if (n === 0) return null;
 
-    const moneyById: Record<string, number> = {};
-    if (allRes && allRes.success && Array.isArray(allRes.data)) {
-      for (const r of allRes.data) {
-        const sid = r.station_id != null ? String(r.station_id) : "";
-        if (!sid) continue;
-        const m = r.money != null ? Number(r.money) : 0;
-        if (!isNaN(m)) moneyById[sid] = m;
-      }
+    if (!mtdPayload || !mtdPayload.success || !Array.isArray(mtdPayload.data)) {
+      return 0;
     }
-
-    let sum = 0;
-    for (const s of networkStations) {
-      const id = String(s.id ?? "");
-      sum += moneyById[id] ?? 0;
-    }
-    return sum / n;
+    const totalRev = mtdPayload.data.reduce(
+      (sum, row) => sum + parseMoney(row.money),
+      0,
+    );
+    return totalRev / n;
   } catch (err) {
     console.warn("Network avg per station failed", err);
     return null;
@@ -151,7 +144,7 @@ export default function PerformanceView() {
       } catch (e) {
         console.warn("Station totals (rents/.../all) failed to load", e);
       }
-      const avg = await computeAvgPerStation(allFetch);
+      const avg = await computeAvgPerStation(mtdPayload);
       setAvgPerStation(avg);
       setMtd(mtdPayload);
       setAllRes(allFetch);
