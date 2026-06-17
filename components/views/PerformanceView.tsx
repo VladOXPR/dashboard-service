@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { isAdmin, useAuth } from "@/lib/auth";
+import { useAuth } from "@/lib/auth";
 import {
   fetchAllStations,
   fetchRentsMtd,
@@ -60,7 +60,7 @@ async function computeAvgPerStation(allRes: { success?: boolean; data?: StationR
 
 type StationPerfRow = { id: string; title: string; money: number };
 
-function buildAdminStationPerfRows(
+function buildStationPerfRows(
   allStations: StationRecord[],
   allRes: { success?: boolean; data?: StationRevenueRow[] } | null,
 ): StationPerfRow[] {
@@ -139,15 +139,9 @@ export default function PerformanceView() {
     }
     setChartRange({ start: validation.start, end: validation.end });
 
-    let scoped: string | string[] | null = null;
-    if (!isAdmin(user)) {
-      const stations = Array.isArray(user.stations) ? (user.stations as string[]) : [];
-      if (stations.length > 0) scoped = stations;
-    }
-
     let allFetch: { success?: boolean; data?: StationRevenueRow[] } | null = null;
     try {
-      const mtdPayload = (await fetchRentsMtd(scoped, validation.start, validation.end)) as RentMtdPayload;
+      const mtdPayload = (await fetchRentsMtd(null, validation.start, validation.end)) as RentMtdPayload;
       try {
         const all = (await fetchRentsMtdAll(validation.start, validation.end)) as {
           success?: boolean;
@@ -164,33 +158,36 @@ export default function PerformanceView() {
     } catch (mtdErr) {
       console.warn("MTD rent data failed to load", mtdErr);
       setMtd(null);
+      setError(
+        mtdErr instanceof Error
+          ? mtdErr.message
+          : "Failed to load revenue data. Please try again.",
+      );
     } finally {
       setLoading(false);
     }
 
-    if (isAdmin(user)) {
-      setStationListLoading(true);
-      try {
-        if (!allFetch) {
-          const all = (await fetchRentsMtdAll(validation.start, validation.end)) as {
-            success?: boolean;
-            data?: StationRevenueRow[];
-          };
-          allFetch = all;
-          setAllRes(all);
-        }
-      } catch (e) {
-        console.warn("Station performance (mtd/all) failed to load", e);
+    setStationListLoading(true);
+    try {
+      if (!allFetch) {
+        const all = (await fetchRentsMtdAll(validation.start, validation.end)) as {
+          success?: boolean;
+          data?: StationRevenueRow[];
+        };
+        allFetch = all;
+        setAllRes(all);
       }
-      try {
-        const stationsJson = await fetchAllStations();
-        setAllStations(stationsFromApiJson(stationsJson));
-      } catch (e) {
-        console.warn("Station list for performance table failed", e);
-        setAllStations([]);
-      } finally {
-        setStationListLoading(false);
-      }
+    } catch (e) {
+      console.warn("Station performance (mtd/all) failed to load", e);
+    }
+    try {
+      const stationsJson = await fetchAllStations();
+      setAllStations(stationsFromApiJson(stationsJson));
+    } catch (e) {
+      console.warn("Station list for performance table failed", e);
+      setAllStations([]);
+    } finally {
+      setStationListLoading(false);
     }
   }, [user, start, end]);
 
@@ -199,10 +196,7 @@ export default function PerformanceView() {
     load();
   }, [ready, load]);
 
-  const showStationList = isAdmin(user);
-  const stationPerfRows: StationPerfRow[] = showStationList
-    ? buildAdminStationPerfRows(allStations, allRes)
-    : [];
+  const stationPerfRows: StationPerfRow[] = buildStationPerfRows(allStations, allRes);
   const { page, setPage, totalPages, pagedItems, totalItems } = usePagedItems(stationPerfRows, 10);
 
   return (
@@ -227,50 +221,48 @@ export default function PerformanceView() {
         />
       ) : null}
 
-      {showStationList ? (
-        <section className="station-performance-section">
-          <TableCard.Root>
-            <TableCard.Header
-              title="Stations"
-              badge={
-                <Badge size="sm" color="brand" type="pill-color">
-                  {totalItems} {totalItems === 1 ? "station" : "stations"}
-                </Badge>
-              }
-            />
-            {stationListLoading ? (
-              <div className="px-4 py-3 md:px-6 md:py-4">
-                <SkeletonTable rows={5} withSecondary={false} />
-              </div>
-            ) : stationPerfRows.length === 0 ? (
-              <p className="px-4 py-6 text-sm text-text-tertiary md:px-6">No station revenue data for this range.</p>
-            ) : (
-              <>
-                <Table aria-label="Station revenue for selected range">
-                  <Table.Header>
-                    <Table.Head id="station" label="Station" isRowHeader className="w-full" />
-                    <Table.Head id="revenue" label="Revenue" />
-                  </Table.Header>
-                  <Table.Body items={pagedItems}>
-                    {(row) => (
-                      <Table.Row id={row.id}>
-                        <Table.Cell className="font-medium">{row.title}</Table.Cell>
-                        <Table.Cell className="font-semibold text-text-primary tabular-nums">${row.money}</Table.Cell>
-                      </Table.Row>
-                    )}
-                  </Table.Body>
-                </Table>
-                <PaginationPageMinimalCenter
-                  page={page}
-                  total={totalPages}
-                  onPageChange={setPage}
-                  className="px-4 py-3 md:px-6 md:pt-3 md:pb-4"
-                />
-              </>
-            )}
-          </TableCard.Root>
-        </section>
-      ) : null}
+      <section className="station-performance-section">
+        <TableCard.Root>
+          <TableCard.Header
+            title="Stations"
+            badge={
+              <Badge size="sm" color="brand" type="pill-color">
+                {totalItems} {totalItems === 1 ? "station" : "stations"}
+              </Badge>
+            }
+          />
+          {stationListLoading ? (
+            <div className="px-4 py-3 md:px-6 md:py-4">
+              <SkeletonTable rows={5} withSecondary={false} />
+            </div>
+          ) : stationPerfRows.length === 0 ? (
+            <p className="px-4 py-6 text-sm text-text-tertiary md:px-6">No station revenue data for this range.</p>
+          ) : (
+            <>
+              <Table aria-label="Station revenue for selected range">
+                <Table.Header>
+                  <Table.Head id="station" label="Station" isRowHeader className="w-full" />
+                  <Table.Head id="revenue" label="Revenue" />
+                </Table.Header>
+                <Table.Body items={pagedItems}>
+                  {(row) => (
+                    <Table.Row id={row.id}>
+                      <Table.Cell className="font-medium">{row.title}</Table.Cell>
+                      <Table.Cell className="font-semibold text-text-primary tabular-nums">${row.money}</Table.Cell>
+                    </Table.Row>
+                  )}
+                </Table.Body>
+              </Table>
+              <PaginationPageMinimalCenter
+                page={page}
+                total={totalPages}
+                onPageChange={setPage}
+                className="px-4 py-3 md:px-6 md:pt-3 md:pb-4"
+              />
+            </>
+          )}
+        </TableCard.Root>
+      </section>
     </main>
   );
 }

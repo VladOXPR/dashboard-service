@@ -380,7 +380,16 @@ export default function MtdChart({ payload, rangeStart, rangeEnd, avgPerStation 
     };
   }, [summary]);
 
-  if (!summary) return null;
+  if (!summary) {
+    return (
+      <div className="mtd-chart-card">
+        <div className="mtd-chart-title">Revenue</div>
+        <div className="mtd-chart-description">
+          No revenue data for the selected period.
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
